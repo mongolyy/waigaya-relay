@@ -1,40 +1,40 @@
-## 概要
+## Summary
 
-<!-- このPRで何をしたか、1〜3行で説明してください -->
+<!-- Briefly describe what this PR does (1–3 lines) -->
 
-## 変更の種類
+## Type of Change
 
-<!-- 該当するものに `x` を入れてください -->
+<!-- Put an `x` in the boxes that apply -->
 
-- [ ] バグ修正
-- [ ] 新機能
-- [ ] リファクタリング
-- [ ] ドキュメント更新
-- [ ] テスト追加・修正
-- [ ] その他: 
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Refactoring
+- [ ] Documentation update
+- [ ] Test addition / update
+- [ ] Other: 
 
-## 関連 Issue
+## Related Issue
 
-<!-- 例: Closes #123 -->
+<!-- e.g. Closes #123 -->
 
-## 変更内容
+## Changes
 
-<!-- 変更の詳細や背景を説明してください。レビュアーが判断しやすくなる情報を書いてください -->
+<!-- Describe the details and motivation behind the changes to help reviewers -->
 
-## 動作確認
+## Verification
 
-<!-- 確認した内容をチェックしてください -->
+<!-- Check all that apply -->
 
-- [ ] `npm run dev` でローカル動作を確認した
-- [ ] Slack への中継が正常に動作する（または変更なし）
-- [ ] Teams への中継が正常に動作する（または変更なし）
-- [ ] `npm test` がすべてパスする
-- [ ] `npm run typecheck` がエラーなし
+- [ ] Verified local behavior with `npm run dev`
+- [ ] Slack relay works correctly (or not affected)
+- [ ] Teams relay works correctly (or not affected)
+- [ ] All tests pass with `npm test`
+- [ ] No type errors with `npm run typecheck`
 
-## スクリーンショット（UIの変更がある場合）
+## Screenshots (if UI changes)
 
-<!-- Before / After のスクリーンショットを貼ってください -->
+<!-- Add before/after screenshots if applicable -->
 
-## レビュアーへの補足
+## Notes for Reviewers
 
-<!-- 特に見てほしい箇所や、判断が難しかった部分があれば -->
+<!-- Highlight anything that needs special attention or was a difficult design decision -->

@@ -1,27 +1,27 @@
 ---
-name: 機能リクエスト
-about: 新機能や改善の提案
+name: Feature Request
+about: Suggest a new feature or improvement
 title: "[Feature] "
 labels: enhancement
 assignees: ""
 ---
 
-## 解決したい課題
+## Problem
 
-<!-- どんな問題・不満があるか。例: 〜のとき、〜ができなくて困る -->
+<!-- What problem or frustration are you trying to solve? e.g. When I do X, I can't Y -->
 
-## 提案する機能・改善
+## Proposed Solution
 
-<!-- 何をどう変えたいか、具体的に説明してください -->
+<!-- What would you like to happen? Be as specific as possible -->
 
-## 実現方法のアイデア（任意）
+## Implementation Ideas (optional)
 
-<!-- 実装方法のアイデアがあれば -->
+<!-- Any ideas on how this could be implemented -->
 
-## 代替手段
+## Alternatives Considered
 
-<!-- 今は別の方法で回避しているか、他に検討した選択肢があれば -->
+<!-- Any workarounds you currently use or other approaches you considered -->
 
-## 補足
+## Additional Context
 
-<!-- その他、参考になる情報・リンク・スクリーンショットなど -->
+<!-- Any other relevant info, links, or screenshots -->

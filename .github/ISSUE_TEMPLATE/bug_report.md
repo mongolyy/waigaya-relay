@@ -1,49 +1,49 @@
 ---
-name: バグ報告
-about: 不具合・エラーを報告する
+name: Bug Report
+about: Report a bug or unexpected behavior
 title: "[Bug] "
 labels: bug
 assignees: ""
 ---
 
-## バグの内容
+## Description
 
-<!-- 何が起きているか、簡潔に説明してください -->
+<!-- Briefly describe what is happening -->
 
-## 再現手順
+## Steps to Reproduce
 
 1. 
 2. 
 3. 
 
-## 期待する動作
+## Expected Behavior
 
-<!-- 本来どう動くべきか -->
+<!-- What should happen -->
 
-## 実際の動作
+## Actual Behavior
 
-<!-- 実際に何が起きているか -->
+<!-- What actually happens -->
 
-## エラーメッセージ / スクリーンショット
+## Error Messages / Screenshots
 
-<!-- エラーログやスクリーンショットがあれば貼り付けてください -->
+<!-- Paste error logs or screenshots if available -->
 
 <details>
-<summary>エラーログ</summary>
+<summary>Error Log</summary>
 
 ```
-（ここにログを貼り付け）
+(paste log here)
 ```
 
 </details>
 
-## 環境
+## Environment
 
-- Node.js バージョン: 
-- デプロイ先: <!-- ローカル / Vercel / その他 -->
-- ブラウザ（UI の問題の場合）: 
-- 中継先: <!-- Slack / Teams / 両方 -->
+- Node.js version: 
+- Deployment: <!-- Local / Vercel / Other -->
+- Browser (if UI issue): 
+- Relay target: <!-- Slack / Teams / Both -->
 
-## 補足
+## Additional Context
 
-<!-- その他、参考になる情報があれば -->
+<!-- Any other relevant information -->
