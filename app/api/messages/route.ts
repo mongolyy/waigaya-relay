@@ -51,6 +51,8 @@ export async function POST(request: Request): Promise<NextResponse> {
   const ok = executed.length > 0 && executed.every((r) => r.ok);
 
   const response: PostMessageResponse = { ok, results };
-  const httpStatus = ok ? 200 : executed.length === 0 ? 500 : 502;
-  return NextResponse.json(response, { status: httpStatus });
+  // 中継の成否はレスポンスボディの ok / results で伝える。
+  // 常に 200 を返すことで、Vercel 等の CDN が 5xx を HTML エラーページに
+  // 差し替えてフロントエンドの JSON パースが壊れる問題を防ぐ。
+  return NextResponse.json(response, { status: 200 });
 }
