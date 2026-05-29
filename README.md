@@ -10,6 +10,17 @@ Built with Next.js (App Router) and ready to deploy on **Vercel**.
 
 ---
 
+## Usage
+
+1. Type your message in the input field — anything you want the team to discuss on Slack or Teams.
+2. Hit **Send** and the message is automatically posted to both Slack and Microsoft Teams.
+3. The result for each service (success / failure / skipped) is shown at the bottom of the page.
+4. Reply to the posted message in Slack or Teams to kick off a thread discussion.
+
+> Either Slack or Teams alone is fine. Services without a configured webhook are automatically skipped.
+
+---
+
 ## Features
 
 - Send messages from a simple web chat interface
