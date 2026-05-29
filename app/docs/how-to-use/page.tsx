@@ -43,8 +43,8 @@ export default function HowToUsePage() {
     <main className="app">
       <header className="app__header">
         <div className="how-to__breadcrumb">
-          <Link href="/" className="how-to__back">
-            ← チャット画面に戻る
+          <Link href="/docs" className="how-to__back">
+            ← ドキュメント一覧
           </Link>
         </div>
         <h1>使い方</h1>

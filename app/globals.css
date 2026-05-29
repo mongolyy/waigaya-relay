@@ -288,3 +288,40 @@ body {
 .how-to__cta-button:hover {
   background: var(--accent-hover);
 }
+
+/* ---- docs index page ---- */
+
+.docs__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.docs__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background: var(--panel);
+  border-radius: 10px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+.docs__item:hover {
+  border-color: var(--accent);
+}
+
+.docs__item-title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.docs__item-desc {
+  font-size: 0.9rem;
+  color: var(--muted);
+}

@@ -61,7 +61,7 @@ export default function Home() {
         <p className="app__lead">
           Post a message and relay it to Slack and Microsoft Teams to spark a lively discussion.
         </p>
-        <Link href="/how-to-use" className="app__how-to-link">
+        <Link href="/docs/how-to-use" className="app__how-to-link">
           使い方を見る →
         </Link>
       </header>
