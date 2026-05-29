@@ -7,7 +7,6 @@ export default defineConfig({
     globalSetup: "./tests/e2e/setup.ts",
     include: ["tests/e2e/**/*.test.ts"],
     testTimeout: 30_000,
-    hookTimeout: 90_000,
   },
   resolve: {
     alias: {

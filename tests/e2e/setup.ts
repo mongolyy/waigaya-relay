@@ -21,7 +21,6 @@ export async function setup() {
     {
       env: {
         ...process.env,
-        PORT: String(APP_PORT),
         SLACK_WEBHOOK_URL: `http://localhost:${MOCK_PORT}/slack`,
         TEAMS_WEBHOOK_URL: `http://localhost:${MOCK_PORT}/teams`,
       },
@@ -34,6 +33,11 @@ export async function setup() {
 
 export async function teardown() {
   nextProcess?.kill("SIGTERM");
+  await new Promise<void>((resolve) => {
+    nextProcess?.once("exit", resolve);
+    setTimeout(resolve, 5_000);
+  });
+  mockServer.closeAllConnections?.();
   await new Promise<void>((resolve) => mockServer.close(() => resolve()));
 }
 
@@ -41,7 +45,7 @@ async function waitForServer(url: string, timeoutMs: number): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: AbortSignal.timeout(5_000) });
       if (res.status < 500) return;
     } catch {
       // not ready yet
