@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Documentation
+
+- `README.md` — English user-facing documentation
+- `README.ja.md` — Japanese version of the same documentation
+
 ## Commands
 
 ```bash
