@@ -37,8 +37,10 @@ export async function teardown() {
     nextProcess?.once("exit", resolve);
     setTimeout(resolve, 5_000);
   });
-  mockServer.closeAllConnections?.();
-  await new Promise<void>((resolve) => mockServer.close(() => resolve()));
+  if (mockServer) {
+    mockServer.closeAllConnections?.();
+    await new Promise<void>((resolve) => mockServer.close(() => resolve()));
+  }
 }
 
 async function waitForServer(url: string, timeoutMs: number): Promise<void> {
