@@ -1,5 +1,8 @@
 import type { RelayResult } from "@/lib/types";
 
+/** Webhook が無応答の場合に待ち続けないためのタイムアウト（ミリ秒）。 */
+const WEBHOOK_TIMEOUT_MS = 5000;
+
 /**
  * Slack の Incoming Webhook にメッセージを投稿する。
  * 投稿されたメッセージはチャンネルに表示され、そのまま「スレッドの起点」となる。
@@ -22,6 +25,7 @@ export async function postToSlack(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: message }),
+      signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
     });
 
     if (!res.ok) {
@@ -36,11 +40,10 @@ export async function postToSlack(
 
     return { target: "slack", ok: true, skipped: false };
   } catch (err) {
-    return {
-      target: "slack",
-      ok: false,
-      skipped: false,
-      detail: `Slack への投稿中にエラーが発生しました: ${(err as Error).message}`,
-    };
+    const detail =
+      (err as Error).name === "TimeoutError"
+        ? `Slack への投稿がタイムアウトしました（${WEBHOOK_TIMEOUT_MS}ms）。`
+        : `Slack への投稿中にエラーが発生しました: ${(err as Error).message}`;
+    return { target: "slack", ok: false, skipped: false, detail };
   }
 }

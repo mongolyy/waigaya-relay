@@ -121,6 +121,10 @@ waigaya-relay/
 
 ## 8. 将来的な拡張案
 
+- **Teams の連携方式の移行**: 現在使用している Office 365 Connectors
+  （`MessageCard` 形式の Incoming Webhook）は Microsoft が廃止を進めており、
+  いずれ新規作成不可・既存も停止する見込み。本運用に向けては
+  **Power Automate の Workflows（Adaptive Cards）** への移行を検討する。
 - **投稿先チャンネルの選択**: 複数の Webhook をチャンネルとして登録し、
   画面のセレクタから送信先を選べるようにする。
 - 投稿者名・アイコンの指定。

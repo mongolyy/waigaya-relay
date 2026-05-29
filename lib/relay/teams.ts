@@ -1,5 +1,8 @@
 import type { RelayResult } from "@/lib/types";
 
+/** Webhook が無応答の場合に待ち続けないためのタイムアウト（ミリ秒）。 */
+const WEBHOOK_TIMEOUT_MS = 5000;
+
 /**
  * Microsoft Teams の Incoming Webhook にメッセージを投稿する。
  * MessageCard 形式の JSON を送信する。投稿されたメッセージに
@@ -30,6 +33,7 @@ export async function postToTeams(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
     });
 
     if (!res.ok) {
@@ -44,11 +48,10 @@ export async function postToTeams(
 
     return { target: "teams", ok: true, skipped: false };
   } catch (err) {
-    return {
-      target: "teams",
-      ok: false,
-      skipped: false,
-      detail: `Teams への投稿中にエラーが発生しました: ${(err as Error).message}`,
-    };
+    const detail =
+      (err as Error).name === "TimeoutError"
+        ? `Teams への投稿がタイムアウトしました（${WEBHOOK_TIMEOUT_MS}ms）。`
+        : `Teams への投稿中にエラーが発生しました: ${(err as Error).message}`;
+    return { target: "teams", ok: false, skipped: false, detail };
   }
 }
