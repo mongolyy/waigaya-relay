@@ -1,0 +1,28 @@
+{
+  "name": "waigaya-relay",
+  "version": "0.1.0",
+  "description": "Web チャットに投稿すると Slack と Microsoft Teams に中継してスレッドの起点を作るアプリ",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "next": "^16.2.6",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  },
+  "license": "MIT"
+}
