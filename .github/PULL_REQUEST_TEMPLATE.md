@@ -30,6 +30,8 @@
 - [ ] Teams relay works correctly (or not affected)
 - [ ] All tests pass with `npm test`
 - [ ] No type errors with `npm run typecheck`
+- [ ] No lint errors with `npm run lint`
+- [ ] Build succeeds with `npm run build`
 
 ## Screenshots (if UI changes)
 
