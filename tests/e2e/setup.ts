@@ -14,17 +14,17 @@ export async function setup() {
     res.end("ok");
   });
   await new Promise<void>((resolve) => mockServer.listen(MOCK_PORT, resolve));
-
   nextProcess = spawn(
     "node",
-    ["node_modules/.bin/next", "dev", "-p", String(APP_PORT)],
+    ["node_modules/next/dist/bin/next", "dev", "-p", String(APP_PORT)],
     {
       env: {
         ...process.env,
+        PORT: String(APP_PORT),
         SLACK_WEBHOOK_URL: `http://localhost:${MOCK_PORT}/slack`,
         TEAMS_WEBHOOK_URL: `http://localhost:${MOCK_PORT}/teams`,
       },
-      stdio: "pipe",
+      stdio: "ignore",
     },
   );
 
