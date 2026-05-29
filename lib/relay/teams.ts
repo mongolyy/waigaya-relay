@@ -1,7 +1,5 @@
 import type { RelayResult } from "@/lib/types";
-
-/** Timeout in ms to avoid hanging indefinitely when the webhook is unresponsive. */
-const WEBHOOK_TIMEOUT_MS = 5000;
+import { WEBHOOK_TIMEOUT_MS } from "@/lib/relay/constants";
 
 /**
  * Post a message to the Microsoft Teams Incoming Webhook (MessageCard format).

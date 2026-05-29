@@ -200,11 +200,10 @@ body {
 
 .how-to__heading {
   margin: 0 0 16px;
-  font-size: 1.1rem;
+  font-size: 0.8rem;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 0.8rem;
   border-bottom: 1px solid #334155;
   padding-bottom: 8px;
 }

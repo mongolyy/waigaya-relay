@@ -71,8 +71,8 @@ export default function HowToUsePage() {
       <section className="how-to__section">
         <h2 className="how-to__heading">Notes</h2>
         <ul className="how-to__notes">
-          {NOTES.map((note) => (
-            <li key={note} className="how-to__note">
+          {NOTES.map((note, i) => (
+            <li key={i} className="how-to__note">
               {note}
             </li>
           ))}

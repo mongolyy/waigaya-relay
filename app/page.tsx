@@ -35,17 +35,18 @@ export default function Home() {
         body: JSON.stringify({ message: trimmed }),
       });
 
-      const data = (await res.json()) as
-        | PostMessageResponse
-        | { ok: false; error: string };
-
-      if ("error" in data) {
-        setStatus({ kind: "error", message: data.error });
+      if (!res.ok) {
+        const errData = (await res.json().catch(() => ({}))) as { error?: string };
+        setStatus({
+          kind: "error",
+          message: errData.error ?? `Server error (HTTP ${res.status}).`,
+        });
         return;
       }
 
+      const data = (await res.json()) as PostMessageResponse;
       setStatus({ kind: "done", ok: data.ok, results: data.results });
-      if (data.ok) setMessage("");
+      if (data.results.some((r) => !r.skipped && r.ok)) setMessage("");
     } catch {
       setStatus({
         kind: "error",
