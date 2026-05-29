@@ -62,7 +62,7 @@ export default function Home() {
           Post a message and relay it to Slack and Microsoft Teams to spark a lively discussion.
         </p>
         <Link href="/docs/how-to-use" className="app__how-to-link">
-          使い方を見る →
+          How to Use →
         </Link>
       </header>
 
