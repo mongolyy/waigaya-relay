@@ -40,10 +40,11 @@ export async function postToSlack(
 
     return { target: "slack", ok: true, skipped: false };
   } catch (err) {
-    const detail =
-      (err as Error).name === "TimeoutError"
-        ? `Slack への投稿がタイムアウトしました（${WEBHOOK_TIMEOUT_MS}ms）。`
-        : `Slack への投稿中にエラーが発生しました: ${(err as Error).message}`;
+    const isTimeout = err instanceof Error && err.name === "TimeoutError";
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    const detail = isTimeout
+      ? `Slack への投稿がタイムアウトしました（${WEBHOOK_TIMEOUT_MS}ms）。`
+      : `Slack への投稿中にエラーが発生しました: ${errorMessage}`;
     return { target: "slack", ok: false, skipped: false, detail };
   }
 }

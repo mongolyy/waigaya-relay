@@ -98,7 +98,9 @@ export default function Home() {
             >
               {status.ok
                 ? "✅ 中継しました。スレッドを立てて議論を始めましょう！"
-                : "⚠️ 一部の中継に失敗しました。詳細を確認してください。"}
+                : status.results.every((r) => r.skipped)
+                  ? "⚠️ 中継先が設定されていません。環境変数を確認してください。"
+                  : "⚠️ 中継に失敗しました。詳細を確認してください。"}
             </p>
             <ul className="status__list">
               {status.results.map((r) => (

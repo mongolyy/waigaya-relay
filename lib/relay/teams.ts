@@ -48,10 +48,11 @@ export async function postToTeams(
 
     return { target: "teams", ok: true, skipped: false };
   } catch (err) {
-    const detail =
-      (err as Error).name === "TimeoutError"
-        ? `Teams への投稿がタイムアウトしました（${WEBHOOK_TIMEOUT_MS}ms）。`
-        : `Teams への投稿中にエラーが発生しました: ${(err as Error).message}`;
+    const isTimeout = err instanceof Error && err.name === "TimeoutError";
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    const detail = isTimeout
+      ? `Teams への投稿がタイムアウトしました（${WEBHOOK_TIMEOUT_MS}ms）。`
+      : `Teams への投稿中にエラーが発生しました: ${errorMessage}`;
     return { target: "teams", ok: false, skipped: false, detail };
   }
 }

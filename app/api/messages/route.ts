@@ -51,5 +51,6 @@ export async function POST(request: Request): Promise<NextResponse> {
   const ok = executed.length > 0 && executed.every((r) => r.ok);
 
   const response: PostMessageResponse = { ok, results };
-  return NextResponse.json(response, { status: ok ? 200 : 502 });
+  const httpStatus = ok ? 200 : executed.length === 0 ? 500 : 502;
+  return NextResponse.json(response, { status: httpStatus });
 }
