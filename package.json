@@ -1,7 +1,7 @@
 {
   "name": "waigaya-relay",
   "version": "0.1.0",
-  "description": "Web チャットに投稿すると Slack と Microsoft Teams に中継してスレッドの起点を作るアプリ",
+  "description": "A web chat app that relays messages to Slack and Microsoft Teams to start discussion threads.",
   "private": true,
   "scripts": {
     "dev": "next dev",

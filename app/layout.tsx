@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "waigaya-relay",
   description:
-    "Web チャットに投稿すると Slack と Microsoft Teams に中継してスレッドの起点を作るアプリ",
+    "A web chat app that relays messages to Slack and Microsoft Teams to start discussion threads.",
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ja">
+    <html lang="en">
       <body>{children}</body>
     </html>
   );

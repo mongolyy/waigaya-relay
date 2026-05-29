@@ -2,40 +2,40 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "使い方 | waigaya-relay",
+  title: "How to Use | waigaya-relay",
 };
 
 const STEPS = [
   {
     number: 1,
-    title: "メッセージを入力する",
+    title: "Enter a message",
     description:
-      "チャット画面の入力欄に、Slack・Teams で議論したいトピックを書きます。",
+      "Write the topic you want to discuss in Slack and Microsoft Teams in the chat input.",
   },
   {
     number: 2,
-    title: "「送信する」を押す",
+    title: "Click Send",
     description:
-      "送信ボタンを押すと、入力したメッセージが Slack と Microsoft Teams の両方に自動で投稿されます。",
+      "When you click the send button, the message is automatically posted to both Slack and Microsoft Teams.",
   },
   {
     number: 3,
-    title: "中継結果を確認する",
+    title: "Check the relay result",
     description:
-      "画面下部に各サービスへの投稿結果（成功 / 失敗 / スキップ）が表示されます。",
+      "The result for each service (success, failed, or skipped) appears below the composer.",
   },
   {
     number: 4,
-    title: "Slack / Teams でスレッドを始める",
+    title: "Start threads in Slack and Teams",
     description:
-      "届いたメッセージに返信することで、それぞれのツール上でそのままスレッドの議論が始まります。",
+      "Reply to the delivered message in each tool to continue the discussion in a thread.",
   },
 ];
 
 const NOTES = [
-  "Slack・Teams のどちらか一方だけでも使えます。未設定のサービスは自動的にスキップされます。",
-  "環境変数（SLACK_WEBHOOK_URL / TEAMS_WEBHOOK_URL）が未設定の場合、送信してもスキップされます。管理者に確認してください。",
-  "このアプリには認証やレート制限がありません。社内など限定された環境でご利用ください。",
+  "You can use only Slack or only Microsoft Teams. Services without webhook URLs are skipped automatically.",
+  "If SLACK_WEBHOOK_URL or TEAMS_WEBHOOK_URL is not configured, that service is skipped even after sending. Ask an administrator to check the environment variables.",
+  "This app does not include authentication or rate limiting. Use it only in restricted environments such as an internal network.",
 ];
 
 export default function HowToUsePage() {
@@ -44,17 +44,17 @@ export default function HowToUsePage() {
       <header className="app__header">
         <div className="how-to__breadcrumb">
           <Link href="/docs" className="how-to__back">
-            ← ドキュメント一覧
+            ← Docs
           </Link>
         </div>
-        <h1>使い方</h1>
+        <h1>How to Use</h1>
         <p className="app__lead">
-          waigaya-relay はメッセージを Slack・Microsoft Teams に中継し、チームの議論のきっかけを作るツールです。
+          waigaya-relay relays messages to Slack and Microsoft Teams so your team can start a discussion from one post.
         </p>
       </header>
 
       <section className="how-to__section">
-        <h2 className="how-to__heading">送信の手順</h2>
+        <h2 className="how-to__heading">Sending Steps</h2>
         <ol className="how-to__steps">
           {STEPS.map((step) => (
             <li key={step.number} className="how-to__step">
@@ -69,7 +69,7 @@ export default function HowToUsePage() {
       </section>
 
       <section className="how-to__section">
-        <h2 className="how-to__heading">注意事項</h2>
+        <h2 className="how-to__heading">Notes</h2>
         <ul className="how-to__notes">
           {NOTES.map((note) => (
             <li key={note} className="how-to__note">
@@ -81,7 +81,7 @@ export default function HowToUsePage() {
 
       <div className="how-to__cta">
         <Link href="/" className="how-to__cta-button">
-          チャット画面を開く
+          Open Chat
         </Link>
       </div>
     </main>

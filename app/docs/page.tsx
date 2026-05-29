@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "ドキュメント | waigaya-relay",
+  title: "Docs | waigaya-relay",
 };
 
 const DOCS = [
   {
     href: "/docs/how-to-use",
-    title: "使い方",
-    description: "メッセージの送信手順と注意事項",
+    title: "How to Use",
+    description: "Message sending steps and important notes",
   },
 ];
 
@@ -19,11 +19,11 @@ export default function DocsPage() {
       <header className="app__header">
         <div className="how-to__breadcrumb">
           <Link href="/" className="how-to__back">
-            ← チャット画面に戻る
+            ← Back to chat
           </Link>
         </div>
-        <h1>ドキュメント</h1>
-        <p className="app__lead">waigaya-relay の各種ドキュメントです。</p>
+        <h1>Docs</h1>
+        <p className="app__lead">Documentation for waigaya-relay.</p>
       </header>
 
       <ul className="docs__list">

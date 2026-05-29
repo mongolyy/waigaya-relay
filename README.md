@@ -1,6 +1,6 @@
 # waigaya-relay 📣
 
-> [日本語版はこちら](./README.ja.md)
+> [Japanese version](./README.ja.md)
 
 Post a message from the web chat UI and it will be relayed to both **Slack** and **Microsoft Teams**, creating a thread-starter message in each channel.
 

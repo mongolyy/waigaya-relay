@@ -1,9 +1,9 @@
 /**
- * 環境変数から Webhook URL を読み取るヘルパー。
- * Vercel ではダッシュボードの Environment Variables、
- * ローカルでは `.env.local` から読み込まれる。
+ * Helpers for reading webhook URLs from environment variables.
+ * Vercel loads them from the dashboard's Environment Variables settings;
+ * local development loads them from `.env.local`.
  *
- * Webhook URL はシークレットなので、値をログに出力しないこと。
+ * Webhook URLs are secrets, so never log their values.
  */
 
 function readOptional(name: string): string | undefined {
