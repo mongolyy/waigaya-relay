@@ -1,55 +1,55 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import type { PostMessageResponse, RelayResult } from "@/lib/types";
+import { useState } from 'react'
+import type { PostMessageResponse, RelayResult } from '@/lib/types'
 
-const TARGET_LABEL: Record<RelayResult["target"], string> = {
-  slack: "Slack",
-  teams: "Microsoft Teams",
-};
+const TARGET_LABEL: Record<RelayResult['target'], string> = {
+  slack: 'Slack',
+  teams: 'Microsoft Teams',
+}
 
 type Status =
-  | { kind: "idle" }
-  | { kind: "sending" }
-  | { kind: "error"; message: string }
-  | { kind: "done"; ok: boolean; results: RelayResult[] };
+  | { kind: 'idle' }
+  | { kind: 'sending' }
+  | { kind: 'error'; message: string }
+  | { kind: 'done'; ok: boolean; results: RelayResult[] }
 
 export default function Home() {
-  const [message, setMessage] = useState("");
-  const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [message, setMessage] = useState('')
+  const [status, setStatus] = useState<Status>({ kind: 'idle' })
 
-  const sending = status.kind === "sending";
+  const sending = status.kind === 'sending'
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = message.trim();
-    if (!trimmed || sending) return;
+    e.preventDefault()
+    const trimmed = message.trim()
+    if (!trimmed || sending) return
 
-    setStatus({ kind: "sending" });
+    setStatus({ kind: 'sending' })
 
     try {
-      const res = await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: trimmed }),
-      });
+      })
 
       const data = (await res.json()) as
         | PostMessageResponse
-        | { ok: false; error: string };
+        | { ok: false; error: string }
 
-      if ("error" in data) {
-        setStatus({ kind: "error", message: data.error });
-        return;
+      if ('error' in data) {
+        setStatus({ kind: 'error', message: data.error })
+        return
       }
 
-      setStatus({ kind: "done", ok: data.ok, results: data.results });
-      if (data.ok) setMessage("");
+      setStatus({ kind: 'done', ok: data.ok, results: data.results })
+      if (data.ok) setMessage('')
     } catch {
       setStatus({
-        kind: "error",
-        message: "Failed to send. Please check your network connection.",
-      });
+        kind: 'error',
+        message: 'Failed to send. Please check your network connection.',
+      })
     }
   }
 
@@ -58,7 +58,8 @@ export default function Home() {
       <header className="app__header">
         <h1>waigaya-relay 📣</h1>
         <p className="app__lead">
-          Post a message and relay it to Slack and Microsoft Teams to spark a lively discussion.
+          Post a message and relay it to Slack and Microsoft Teams to spark a
+          lively discussion.
         </p>
       </header>
 
@@ -80,27 +81,29 @@ export default function Home() {
           className="composer__submit"
           disabled={sending || message.trim().length === 0}
         >
-          {sending ? "Sending…" : "Send"}
+          {sending ? 'Sending…' : 'Send'}
         </button>
       </form>
 
       <section className="status" aria-live="polite">
-        {status.kind === "error" && (
-          <p className="status__banner status__banner--error">⚠️ {status.message}</p>
+        {status.kind === 'error' && (
+          <p className="status__banner status__banner--error">
+            ⚠️ {status.message}
+          </p>
         )}
 
-        {status.kind === "done" && (
+        {status.kind === 'done' && (
           <>
             <p
               className={`status__banner ${
-                status.ok ? "status__banner--ok" : "status__banner--error"
+                status.ok ? 'status__banner--ok' : 'status__banner--error'
               }`}
             >
               {status.ok
-                ? "✅ Relayed! Start a thread and get the discussion going."
+                ? '✅ Relayed! Start a thread and get the discussion going.'
                 : status.results.every((r) => r.skipped)
-                  ? "⚠️ No relay targets configured. Please check your environment variables."
-                  : "⚠️ Relay failed. See details below."}
+                  ? '⚠️ No relay targets configured. Please check your environment variables.'
+                  : '⚠️ Relay failed. See details below.'}
             </p>
             <ul className="status__list">
               {status.results.map((r) => (
@@ -108,16 +111,18 @@ export default function Home() {
                   <span
                     className={`status__dot ${
                       r.skipped
-                        ? "status__dot--skip"
+                        ? 'status__dot--skip'
                         : r.ok
-                          ? "status__dot--ok"
-                          : "status__dot--error"
+                          ? 'status__dot--ok'
+                          : 'status__dot--error'
                     }`}
                   />
-                  <span className="status__target">{TARGET_LABEL[r.target]}</span>
+                  <span className="status__target">
+                    {TARGET_LABEL[r.target]}
+                  </span>
                   <span className="status__detail">
-                    {r.skipped ? "skipped" : r.ok ? "success" : "failed"}
-                    {r.detail ? ` — ${r.detail}` : ""}
+                    {r.skipped ? 'skipped' : r.ok ? 'success' : 'failed'}
+                    {r.detail ? ` — ${r.detail}` : ''}
                   </span>
                 </li>
               ))}
@@ -126,5 +131,5 @@ export default function Home() {
         )}
       </section>
     </main>
-  );
+  )
 }

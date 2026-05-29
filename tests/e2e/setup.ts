@@ -1,22 +1,22 @@
-import { spawn, type ChildProcess } from "node:child_process";
-import http from "node:http";
+import { type ChildProcess, spawn } from 'node:child_process'
+import http from 'node:http'
 
-const MOCK_PORT = 19999;
-export const APP_PORT = 3099;
-export const APP_BASE_URL = `http://localhost:${APP_PORT}`;
+const MOCK_PORT = 19999
+export const APP_PORT = 3099
+export const APP_BASE_URL = `http://localhost:${APP_PORT}`
 
-let mockServer: http.Server;
-let nextProcess: ChildProcess;
+let mockServer: http.Server
+let nextProcess: ChildProcess
 
 export async function setup() {
   mockServer = http.createServer((_req, res) => {
-    res.writeHead(200, { "Content-Type": "text/plain" });
-    res.end("ok");
-  });
-  await new Promise<void>((resolve) => mockServer.listen(MOCK_PORT, resolve));
+    res.writeHead(200, { 'Content-Type': 'text/plain' })
+    res.end('ok')
+  })
+  await new Promise<void>((resolve) => mockServer.listen(MOCK_PORT, resolve))
   nextProcess = spawn(
-    "node",
-    ["node_modules/next/dist/bin/next", "dev", "-p", String(APP_PORT)],
+    'node',
+    ['node_modules/next/dist/bin/next', 'dev', '-p', String(APP_PORT)],
     {
       env: {
         ...process.env,
@@ -24,35 +24,35 @@ export async function setup() {
         SLACK_WEBHOOK_URL: `http://localhost:${MOCK_PORT}/slack`,
         TEAMS_WEBHOOK_URL: `http://localhost:${MOCK_PORT}/teams`,
       },
-      stdio: "ignore",
+      stdio: 'ignore',
     },
-  );
+  )
 
-  await waitForServer(APP_BASE_URL, 60_000);
+  await waitForServer(APP_BASE_URL, 60_000)
 }
 
 export async function teardown() {
-  nextProcess?.kill("SIGTERM");
+  nextProcess?.kill('SIGTERM')
   await new Promise<void>((resolve) => {
-    nextProcess?.once("exit", resolve);
-    setTimeout(resolve, 5_000);
-  });
+    nextProcess?.once('exit', resolve)
+    setTimeout(resolve, 5_000)
+  })
   if (mockServer) {
-    mockServer.closeAllConnections?.();
-    await new Promise<void>((resolve) => mockServer.close(() => resolve()));
+    mockServer.closeAllConnections?.()
+    await new Promise<void>((resolve) => mockServer.close(() => resolve()))
   }
 }
 
 async function waitForServer(url: string, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
+  const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
     try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(5_000) });
-      if (res.status < 500) return;
+      const res = await fetch(url, { signal: AbortSignal.timeout(5_000) })
+      if (res.status < 500) return
     } catch {
       // not ready yet
     }
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 500))
   }
-  throw new Error(`Server at ${url} did not become ready within ${timeoutMs}ms`);
+  throw new Error(`Server at ${url} did not become ready within ${timeoutMs}ms`)
 }
