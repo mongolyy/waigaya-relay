@@ -1,8 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/config', () => ({
-  getSlackWebhookUrl: vi.fn(() => 'https://hooks.slack.com/test'),
-  getTeamsWebhookUrl: vi.fn(() => 'https://outlook.office.com/test'),
+  getSlackWebhookConfig: vi.fn(() => ({
+    url: 'https://hooks.slack.com/test',
+    inCooldown: false,
+  })),
+  getTeamsWebhookConfig: vi.fn(() => ({
+    url: 'https://outlook.office.com/test',
+    inCooldown: false,
+  })),
 }))
 
 vi.mock('@/lib/relay/slack', () => ({
@@ -14,6 +20,7 @@ vi.mock('@/lib/relay/teams', () => ({
 }))
 
 import { POST } from '@/app/api/messages/route'
+import { getSlackWebhookConfig, getTeamsWebhookConfig } from '@/lib/config'
 import { postToSlack } from '@/lib/relay/slack'
 import { postToTeams } from '@/lib/relay/teams'
 import type { RelayResult } from '@/lib/types'
@@ -55,8 +62,17 @@ function makeRequest(body: unknown): Request {
 
 describe('POST /api/messages', () => {
   beforeEach(() => {
+    vi.clearAllMocks()
     vi.mocked(postToSlack).mockResolvedValue(SUCCESS_SLACK)
     vi.mocked(postToTeams).mockResolvedValue(SUCCESS_TEAMS)
+    vi.mocked(getSlackWebhookConfig).mockReturnValue({
+      url: 'https://hooks.slack.com/test',
+      inCooldown: false,
+    })
+    vi.mocked(getTeamsWebhookConfig).mockReturnValue({
+      url: 'https://outlook.office.com/test',
+      inCooldown: false,
+    })
   })
 
   describe('input validation', () => {
@@ -156,6 +172,78 @@ describe('POST /api/messages', () => {
       const data = await res.json()
       expect(data.results).toContainEqual(FAILED_SLACK)
       expect(data.results).toContainEqual(SUCCESS_TEAMS)
+    })
+  })
+
+  describe('cooldown', () => {
+    it('skips Slack relay and returns ok:false when Slack is in cooldown', async () => {
+      vi.mocked(getSlackWebhookConfig).mockReturnValueOnce({
+        url: 'https://hooks.slack.com/test',
+        inCooldown: true,
+      })
+      vi.mocked(postToTeams).mockResolvedValueOnce(SKIPPED_TEAMS)
+
+      const res = await POST(makeRequest({ message: 'hello' }))
+      expect(res.status).toBe(200)
+      const data = await res.json()
+      expect(data.ok).toBe(false)
+      expect(postToSlack).not.toHaveBeenCalled()
+
+      const slackResult = data.results.find(
+        (r: RelayResult) => r.target === 'slack',
+      )
+      expect(slackResult.skipped).toBe(true)
+      expect(slackResult.detail).toContain('cooldown')
+    })
+
+    it('skips Teams relay and returns ok:false when Teams is in cooldown', async () => {
+      vi.mocked(getTeamsWebhookConfig).mockReturnValueOnce({
+        url: 'https://outlook.office.com/test',
+        inCooldown: true,
+      })
+      vi.mocked(postToSlack).mockResolvedValueOnce(SKIPPED_SLACK)
+
+      const res = await POST(makeRequest({ message: 'hello' }))
+      expect(res.status).toBe(200)
+      const data = await res.json()
+      expect(data.ok).toBe(false)
+      expect(postToTeams).not.toHaveBeenCalled()
+
+      const teamsResult = data.results.find(
+        (r: RelayResult) => r.target === 'teams',
+      )
+      expect(teamsResult.skipped).toBe(true)
+      expect(teamsResult.detail).toContain('cooldown')
+    })
+
+    it('returns ok:true when one relay is in cooldown but the other succeeds', async () => {
+      vi.mocked(getSlackWebhookConfig).mockReturnValueOnce({
+        url: 'https://hooks.slack.com/test',
+        inCooldown: true,
+      })
+
+      const res = await POST(makeRequest({ message: 'hello' }))
+      expect(res.status).toBe(200)
+      const data = await res.json()
+      expect(data.ok).toBe(true)
+    })
+
+    it('returns ok:false when both relays are in cooldown', async () => {
+      vi.mocked(getSlackWebhookConfig).mockReturnValueOnce({
+        url: 'https://hooks.slack.com/test',
+        inCooldown: true,
+      })
+      vi.mocked(getTeamsWebhookConfig).mockReturnValueOnce({
+        url: 'https://outlook.office.com/test',
+        inCooldown: true,
+      })
+
+      const res = await POST(makeRequest({ message: 'hello' }))
+      expect(res.status).toBe(200)
+      const data = await res.json()
+      expect(data.ok).toBe(false)
+      expect(postToSlack).not.toHaveBeenCalled()
+      expect(postToTeams).not.toHaveBeenCalled()
     })
   })
 })

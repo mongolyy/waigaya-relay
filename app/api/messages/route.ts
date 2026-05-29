@@ -1,13 +1,23 @@
 import { NextResponse } from 'next/server'
-import { getSlackWebhookUrl, getTeamsWebhookUrl } from '@/lib/config'
+import { getSlackWebhookConfig, getTeamsWebhookConfig } from '@/lib/config'
 import { postToSlack } from '@/lib/relay/slack'
 import { postToTeams } from '@/lib/relay/teams'
-import type { PostMessageResponse, RelayResult } from '@/lib/types'
+import type { PostMessageResponse, RelayResult, RelayTarget } from '@/lib/types'
 
 const MAX_MESSAGE_LENGTH = 4000
 
 // Run on the Node.js runtime to allow outbound fetch to external webhooks.
 export const runtime = 'nodejs'
+
+function cooldownResult(target: RelayTarget): RelayResult {
+  const envName = target === 'slack' ? 'SLACK_WEBHOOK_URL' : 'TEAMS_WEBHOOK_URL'
+  return {
+    target,
+    ok: false,
+    skipped: true,
+    detail: `${envName} is in 3-day cooldown — relay skipped to guard against supply chain attacks.`,
+  }
+}
 
 /** Relay a message to Slack and/or Teams. */
 export async function POST(request: Request): Promise<NextResponse> {
@@ -43,10 +53,17 @@ export async function POST(request: Request): Promise<NextResponse> {
     )
   }
 
+  const slackConfig = getSlackWebhookConfig()
+  const teamsConfig = getTeamsWebhookConfig()
+
   // Post to Slack and Teams independently so one failure does not affect the other.
   const results: RelayResult[] = await Promise.all([
-    postToSlack(getSlackWebhookUrl(), message),
-    postToTeams(getTeamsWebhookUrl(), message),
+    slackConfig.inCooldown
+      ? Promise.resolve(cooldownResult('slack'))
+      : postToSlack(slackConfig.url, message),
+    teamsConfig.inCooldown
+      ? Promise.resolve(cooldownResult('teams'))
+      : postToTeams(teamsConfig.url, message),
   ])
 
   // ok is true only when at least one relay ran and all executed relays succeeded.
