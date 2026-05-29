@@ -6,10 +6,10 @@ on:
 
 jobs:
   check:
-    name: Issue紐付け確認
+    name: Verify issue linkage
     runs-on: ubuntu-latest
     steps:
-      - name: PRにIssue紐付けがあるか検証
+      - name: Check PR body for issue reference
         uses: actions/github-script@v7
         with:
           script: |
@@ -18,10 +18,10 @@ jobs:
 
             if (!issuePattern.test(body)) {
               core.setFailed(
-                'PRにIssueへの紐付けが見つかりません。\n' +
-                'PR本文の「関連Issue」欄に "Closes #番号" または "Fixes #番号" を記載してください。'
+                'No issue reference found in this PR.\n' +
+                'Add "Closes #N" or "Fixes #N" to the PR body under "Related Issue".'
               );
             } else {
               const match = body.match(issuePattern);
-              console.log(`Issue紐付けを確認しました: ${match[0]}`);
+              console.log(`Issue reference found: ${match[0]}`);
             }
