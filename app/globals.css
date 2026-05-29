@@ -165,3 +165,126 @@ body {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+/* ---- how-to-use page ---- */
+
+.app__how-to-link {
+  display: inline-block;
+  margin-bottom: 24px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.app__how-to-link:hover {
+  text-decoration: underline;
+}
+
+.how-to__breadcrumb {
+  margin-bottom: 12px;
+}
+
+.how-to__back {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.how-to__back:hover {
+  color: var(--text);
+}
+
+.how-to__section {
+  margin-bottom: 36px;
+}
+
+.how-to__heading {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.8rem;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 8px;
+}
+
+.how-to__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.how-to__step {
+  display: flex;
+  gap: 16px;
+  background: var(--panel);
+  padding: 16px;
+  border-radius: 10px;
+  align-items: flex-start;
+}
+
+.how-to__step-number {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.how-to__step-title {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.how-to__step-desc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.how-to__notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.how-to__note {
+  padding: 12px 14px;
+  background: var(--panel);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--muted);
+  border-left: 3px solid #334155;
+}
+
+.how-to__cta {
+  margin-top: 8px;
+}
+
+.how-to__cta-button {
+  display: inline-block;
+  padding: 12px 24px;
+  background: var(--accent);
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.15s ease;
+}
+
+.how-to__cta-button:hover {
+  background: var(--accent-hover);
+}

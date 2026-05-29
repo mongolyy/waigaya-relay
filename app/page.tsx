@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { PostMessageResponse, RelayResult } from "@/lib/types";
 
 const TARGET_LABEL: Record<RelayResult["target"], string> = {
@@ -60,6 +61,9 @@ export default function Home() {
         <p className="app__lead">
           Post a message and relay it to Slack and Microsoft Teams to spark a lively discussion.
         </p>
+        <Link href="/how-to-use" className="app__how-to-link">
+          使い方を見る →
+        </Link>
       </header>
 
       <form className="composer" onSubmit={handleSubmit}>
