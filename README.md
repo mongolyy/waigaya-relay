@@ -1,132 +1,128 @@
 # waigaya-relay 📣
 
-Web のチャット画面に投稿すると、その内容を **Slack** と **Microsoft Teams** に中継し、
-それぞれのチャンネルに「スレッドの起点となるメッセージ」を投稿するアプリです。
+> [日本語版はこちら](./README.ja.md)
 
-単なる問い合わせ転送ツールではなく、**「ワイワイガヤガヤと議論が始まる場を作る」** ことを
-目的にしています。投稿されたメッセージにチームのメンバーが返信していくことで、
-Slack / Teams 上でそのまま議論（スレッド）が始まります。
+Post a message from the web chat UI and it will be relayed to both **Slack** and **Microsoft Teams**, creating a thread-starter message in each channel.
 
-Next.js（App Router）で実装しており、**Vercel にそのままデプロイ**できます。
+The goal is not just forwarding messages — it's about **sparking lively discussions**. Team members can reply directly in Slack or Teams, turning each post into an ongoing conversation thread.
 
----
-
-## 主な機能
-
-- Web のチャット画面からメッセージを送信できる
-- 送信すると **Slack** と **Microsoft Teams** の両方に投稿される
-- Slack / Teams 側では、その投稿を起点にスレッド形式で会話を始められる
-- Slack / Teams のどちらか一方が失敗しても、もう一方の結果は画面に表示される
-  （成功 / 失敗 / スキップを個別に確認できる）
+Built with Next.js (App Router) and ready to deploy on **Vercel**.
 
 ---
 
-## 技術スタック
+## Features
 
-- [Next.js 14](https://nextjs.org/)（App Router）/ React 18
+- Send messages from a simple web chat interface
+- Messages are posted to both **Slack** and **Microsoft Teams** simultaneously
+- Each platform receives a thread-starter message that teammates can reply to
+- If one platform fails, the other still succeeds — results for each (success / failure / skipped) are shown individually
+
+---
+
+## Tech Stack
+
+- [Next.js 14](https://nextjs.org/) (App Router) / React 18
 - TypeScript
-- Slack / Microsoft Teams の Incoming Webhook
-- ホスティング: [Vercel](https://vercel.com/)
+- Slack / Microsoft Teams Incoming Webhooks
+- Hosting: [Vercel](https://vercel.com/)
 
 ---
 
-## セットアップ方法
+## Setup
 
-### 1. 必要なもの
+### 1. Prerequisites
 
-- Node.js 20 以上
-- Slack の Incoming Webhook URL（任意）
-- Microsoft Teams の Incoming Webhook URL（任意）
+- Node.js 20+
+- Slack Incoming Webhook URL (optional)
+- Microsoft Teams Incoming Webhook URL (optional)
 
-> Slack / Teams のどちらか一方だけでも動作します。未設定の中継先は自動的にスキップされます。
+> The app works with either Slack or Teams alone. Unconfigured destinations are skipped automatically.
 
-### 2. 依存パッケージのインストール
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 3. 環境変数の設定
+### 3. Configure environment variables
 
-`.env.example` を `.env.local` にコピーして、Webhook URL を設定します。
+Copy `.env.example` to `.env.local` and fill in your Webhook URLs.
 
 ```bash
 cp .env.example .env.local
 ```
 
-`.env.local` を編集します。
+Edit `.env.local`:
 
 ```dotenv
 SLACK_WEBHOOK_URL=https://hooks.slack.com/services/xxxx/xxxx/xxxx
 TEAMS_WEBHOOK_URL=https://outlook.office.com/webhook/xxxx/IncomingWebhook/xxxx/xxxx
 ```
 
-> ⚠️ `.env.local` は `.gitignore` 済みです。**Webhook URL は絶対にコミットしないでください。**
+> ⚠️ `.env.local` is already in `.gitignore`. **Never commit your Webhook URLs.**
 
-#### Webhook URL の取得方法
+#### How to get Webhook URLs
 
-- **Slack**: [Incoming Webhooks](https://api.slack.com/messaging/webhooks) の手順に従い、
-  投稿先チャンネルを選んで Webhook URL を発行します。
-- **Microsoft Teams**: 投稿したいチャンネルの「コネクタ」から
-  **Incoming Webhook** を追加して URL を発行します。
+- **Slack**: Follow the [Incoming Webhooks](https://api.slack.com/messaging/webhooks) guide and generate a URL for your target channel.
+- **Microsoft Teams**: Go to the desired channel's Connectors settings, add **Incoming Webhook**, and copy the generated URL.
 
 ---
 
-## 環境変数の説明
+## Environment Variables
 
-| 変数名              | 必須 | 説明                                                              |
-| ------------------- | ---- | ----------------------------------------------------------------- |
-| `SLACK_WEBHOOK_URL` | 任意 | Slack Incoming Webhook の URL。未設定なら Slack への中継をスキップ。 |
-| `TEAMS_WEBHOOK_URL` | 任意 | Teams Incoming Webhook の URL。未設定なら Teams への中継をスキップ。 |
+| Variable            | Required | Description                                                         |
+| ------------------- | -------- | ------------------------------------------------------------------- |
+| `SLACK_WEBHOOK_URL` | Optional | Slack Incoming Webhook URL. If unset, Slack relay is skipped.       |
+| `TEAMS_WEBHOOK_URL` | Optional | Teams Incoming Webhook URL. If unset, Teams relay is skipped.       |
 
-- 少なくともどちらか一方を設定してください（両方未設定だと、すべてスキップとなり失敗します）。
-- ローカルでは `.env.local`、Vercel では **Project → Settings → Environment Variables** に登録します。
+- At least one must be set (if both are unset, every post will be skipped and treated as a failure).
+- For local development use `.env.local`; on Vercel use **Project → Settings → Environment Variables**.
 
 ---
 
-## 起動方法（ローカル）
+## Running Locally
 
-開発サーバーを起動します。
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-本番ビルドを試す場合:
+To test a production build:
 
 ```bash
 npm run build
 npm start
 ```
 
-その他のコマンド:
+Other commands:
 
 ```bash
-npm run typecheck   # 型チェックのみ
+npm run typecheck   # type check only
 ```
 
 ---
 
-## 動作確認方法
+## Testing the App
 
-1. `npm run dev` でサーバーを起動する。
-2. ブラウザで [http://localhost:3000](http://localhost:3000) を開く。
-3. 入力欄にメッセージを書いて「送信する」を押す。
-4. 画面下部に中継結果（Slack / Teams それぞれ 成功 / 失敗 / スキップ）が表示される。
-5. Slack / Teams のチャンネルにメッセージが届いていることを確認する。
-6. 届いたメッセージに返信して、スレッドで議論を始める。
+1. Start the server with `npm run dev`.
+2. Open [http://localhost:3000](http://localhost:3000).
+3. Type a message and click **Send**.
+4. The relay results (success / failure / skipped for each of Slack and Teams) are shown below the input.
+5. Verify the message arrived in your Slack / Teams channel.
+6. Reply to the message in Slack / Teams to start a thread discussion.
 
-API を直接叩いて確認することもできます。
+You can also test the API directly:
 
 ```bash
 curl -X POST http://localhost:3000/api/messages \
   -H "Content-Type: application/json" \
-  -d '{"message":"はじめての投稿です！"}'
+  -d '{"message":"Hello from waigaya-relay!"}'
 ```
 
-レスポンス例:
+Example response:
 
 ```json
 {
@@ -140,59 +136,55 @@ curl -X POST http://localhost:3000/api/messages \
 
 ---
 
-## Vercel へのデプロイ
+## Deploying to Vercel
 
-1. このリポジトリを GitHub に push する。
-2. [Vercel](https://vercel.com/) で **New Project** からこのリポジトリを import する。
-   （Next.js は自動検出されるので、ビルド設定は変更不要です）
-3. **Settings → Environment Variables** に `SLACK_WEBHOOK_URL` と
-   `TEAMS_WEBHOOK_URL` を登録する。
-4. **Deploy** を実行する。
+1. Push this repository to GitHub.
+2. Import it as a **New Project** on [Vercel](https://vercel.com/).
+   (Next.js is auto-detected — no build configuration changes needed.)
+3. Add `SLACK_WEBHOOK_URL` and `TEAMS_WEBHOOK_URL` under **Settings → Environment Variables**.
+4. Click **Deploy**.
 
-デプロイ後は発行された URL でチャット画面を利用できます。
-環境変数を変更した場合は再デプロイしてください。
-
----
-
-## セキュリティ上の注意点
-
-- **Webhook URL はシークレットです。** コードに直接書かず、必ず環境変数で渡してください。
-- `.env*` は `.gitignore` 済みです。リポジトリにコミットしないでください。
-- 中継処理はサーバー側（API Route）でのみ実行し、Webhook URL をブラウザに渡しません。
-  フロントエンドは `/api/messages` だけを呼び出します。
-- Webhook URL はログに出力しないようにしています。
-- このプロトタイプには **認証・レート制限はありません**。社内ツールとして限定的に使うか、
-  公開する場合は認証・レート制限などを別途追加してください。
-  （Vercel では HTTPS が標準で有効です）
+After deployment, the chat UI is available at the issued URL.
+Redeploy after changing environment variables.
 
 ---
 
-## ディレクトリ構成
+## Security Notes
+
+- **Webhook URLs are secrets.** Never hardcode them — always pass them via environment variables.
+- `.env*` files are gitignored. Do not commit them.
+- Relay logic runs server-side only (API Route). Webhook URLs are never exposed to the browser; the frontend only calls `/api/messages`.
+- Webhook URLs are not written to logs.
+- This prototype has **no authentication or rate limiting**. Use it as an internal tool with restricted access, or add auth and rate limiting before exposing it publicly. (HTTPS is enabled by default on Vercel.)
+
+---
+
+## Directory Structure
 
 ```
 waigaya-relay/
 ├── app/
-│   ├── layout.tsx                 # ルートレイアウト
-│   ├── page.tsx                   # チャット画面（クライアントコンポーネント）
-│   ├── globals.css                # スタイル
-│   └── api/messages/route.ts      # メッセージ送信 API (POST)
+│   ├── layout.tsx                 # Root layout
+│   ├── page.tsx                   # Chat UI (client component)
+│   ├── globals.css                # Styles
+│   └── api/messages/route.ts      # Message relay API (POST)
 ├── lib/
-│   ├── config.ts                  # 環境変数の読み込み
-│   ├── types.ts                   # 共有の型定義
+│   ├── config.ts                  # Environment variable loading
+│   ├── types.ts                   # Shared type definitions
 │   └── relay/
-│       ├── slack.ts               # Slack Webhook 投稿
-│       └── teams.ts               # Teams Webhook 投稿
-├── docs/plan/                     # 実装計画
+│       ├── slack.ts               # Slack Webhook posting
+│       └── teams.ts               # Teams Webhook posting
+├── docs/plan/                     # Implementation plan
 ├── .env.example
 ├── next.config.mjs
 ├── package.json
 └── tsconfig.json
 ```
 
-実装計画は [`docs/plan/20260529_waigaya-relay.md`](./docs/plan/20260529_waigaya-relay.md) を参照してください。
+See [`docs/plan/20260529_waigaya-relay.md`](./docs/plan/20260529_waigaya-relay.md) for the implementation plan.
 
 ---
 
-## ライセンス
+## License
 
 [MIT](./LICENSE)
