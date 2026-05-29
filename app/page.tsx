@@ -48,7 +48,7 @@ export default function Home() {
     } catch {
       setStatus({
         kind: "error",
-        message: "送信に失敗しました。ネットワークを確認してください。",
+        message: "Failed to send. Please check your network connection.",
       });
     }
   }
@@ -58,19 +58,19 @@ export default function Home() {
       <header className="app__header">
         <h1>waigaya-relay 📣</h1>
         <p className="app__lead">
-          投稿すると Slack と Microsoft Teams に中継して、ワイワイガヤガヤの起点を作ります。
+          Post a message and relay it to Slack and Microsoft Teams to spark a lively discussion.
         </p>
       </header>
 
       <form className="composer" onSubmit={handleSubmit}>
         <label className="composer__label" htmlFor="message">
-          メッセージ
+          Message
         </label>
         <textarea
           id="message"
           className="composer__input"
           rows={4}
-          placeholder="議論のきっかけを書いてみよう…"
+          placeholder="Write something to get the conversation started…"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={sending}
@@ -80,7 +80,7 @@ export default function Home() {
           className="composer__submit"
           disabled={sending || message.trim().length === 0}
         >
-          {sending ? "送信中…" : "送信する"}
+          {sending ? "Sending…" : "Send"}
         </button>
       </form>
 
@@ -97,10 +97,10 @@ export default function Home() {
               }`}
             >
               {status.ok
-                ? "✅ 中継しました。スレッドを立てて議論を始めましょう！"
+                ? "✅ Relayed! Start a thread and get the discussion going."
                 : status.results.every((r) => r.skipped)
-                  ? "⚠️ 中継先が設定されていません。環境変数を確認してください。"
-                  : "⚠️ 中継に失敗しました。詳細を確認してください。"}
+                  ? "⚠️ No relay targets configured. Please check your environment variables."
+                  : "⚠️ Relay failed. See details below."}
             </p>
             <ul className="status__list">
               {status.results.map((r) => (
@@ -116,8 +116,8 @@ export default function Home() {
                   />
                   <span className="status__target">{TARGET_LABEL[r.target]}</span>
                   <span className="status__detail">
-                    {r.skipped ? "スキップ" : r.ok ? "成功" : "失敗"}
-                    {r.detail ? `（${r.detail}）` : ""}
+                    {r.skipped ? "skipped" : r.ok ? "success" : "failed"}
+                    {r.detail ? ` — ${r.detail}` : ""}
                   </span>
                 </li>
               ))}

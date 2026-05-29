@@ -6,17 +6,17 @@ import type { PostMessageResponse, RelayResult } from "@/lib/types";
 
 const MAX_MESSAGE_LENGTH = 4000;
 
-// Webhook への外部 fetch を行うため Node.js ランタイムで実行する。
+// Run on the Node.js runtime to allow outbound fetch to external webhooks.
 export const runtime = "nodejs";
 
-/** メッセージを Slack / Teams に中継する。 */
+/** Relay a message to Slack and/or Teams. */
 export async function POST(request: Request): Promise<NextResponse> {
   let body: unknown;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json(
-      { ok: false, error: "リクエストの形式が不正です。" },
+      { ok: false, error: "Invalid request body." },
       { status: 400 },
     );
   }
@@ -29,30 +29,29 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   if (!message) {
     return NextResponse.json(
-      { ok: false, error: "メッセージを入力してください。" },
+      { ok: false, error: "Message must not be empty." },
       { status: 400 },
     );
   }
   if (message.length > MAX_MESSAGE_LENGTH) {
     return NextResponse.json(
-      { ok: false, error: `メッセージが長すぎます（最大 ${MAX_MESSAGE_LENGTH} 文字）。` },
+      { ok: false, error: `Message is too long (max ${MAX_MESSAGE_LENGTH} characters).` },
       { status: 400 },
     );
   }
 
-  // Slack と Teams は独立に投稿し、片方の失敗がもう片方に影響しないようにする。
+  // Post to Slack and Teams independently so one failure does not affect the other.
   const results: RelayResult[] = await Promise.all([
     postToSlack(getSlackWebhookUrl(), message),
     postToTeams(getTeamsWebhookUrl(), message),
   ]);
 
-  // 「実行された（スキップでない）」中継がすべて成功したかどうか。
+  // ok is true only when at least one relay ran and all executed relays succeeded.
   const executed = results.filter((r) => !r.skipped);
   const ok = executed.length > 0 && executed.every((r) => r.ok);
 
   const response: PostMessageResponse = { ok, results };
-  // 中継の成否はレスポンスボディの ok / results で伝える。
-  // 常に 200 を返すことで、Vercel 等の CDN が 5xx を HTML エラーページに
-  // 差し替えてフロントエンドの JSON パースが壊れる問題を防ぐ。
+  // Always return 200 so CDNs (e.g. Vercel) don't replace the JSON body
+  // with an HTML error page, which would break the frontend's JSON parsing.
   return NextResponse.json(response, { status: 200 });
 }

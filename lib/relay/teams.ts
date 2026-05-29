@@ -1,12 +1,11 @@
 import type { RelayResult } from "@/lib/types";
 
-/** Webhook が無応答の場合に待ち続けないためのタイムアウト（ミリ秒）。 */
+/** Timeout in ms to avoid hanging indefinitely when the webhook is unresponsive. */
 const WEBHOOK_TIMEOUT_MS = 5000;
 
 /**
- * Microsoft Teams の Incoming Webhook にメッセージを投稿する。
- * MessageCard 形式の JSON を送信する。投稿されたメッセージに
- * 返信することで Teams 側でスレッドが始まる。
+ * Post a message to the Microsoft Teams Incoming Webhook (MessageCard format).
+ * The posted message appears in the channel and serves as the thread starter.
  */
 export async function postToTeams(
   webhookUrl: string | undefined,
@@ -17,7 +16,7 @@ export async function postToTeams(
       target: "teams",
       ok: false,
       skipped: true,
-      detail: "TEAMS_WEBHOOK_URL が未設定のため Teams への中継をスキップしました。",
+      detail: "TEAMS_WEBHOOK_URL is not set — Teams relay skipped.",
     };
   }
 
@@ -43,7 +42,7 @@ export async function postToTeams(
         target: "teams",
         ok: false,
         skipped: false,
-        detail: `Teams への投稿に失敗しました (HTTP ${res.status})${body ? `: ${body}` : ""}`,
+        detail: `Teams post failed (HTTP ${res.status})${body ? `: ${body}` : ""}`,
       };
     }
 
@@ -52,8 +51,8 @@ export async function postToTeams(
     const isTimeout = err instanceof Error && err.name === "TimeoutError";
     const errorMessage = err instanceof Error ? err.message : String(err);
     const detail = isTimeout
-      ? `Teams への投稿がタイムアウトしました（${WEBHOOK_TIMEOUT_MS}ms）。`
-      : `Teams への投稿中にエラーが発生しました: ${errorMessage}`;
+      ? `Teams post timed out (${WEBHOOK_TIMEOUT_MS}ms).`
+      : `Teams post failed: ${errorMessage}`;
     return { target: "teams", ok: false, skipped: false, detail };
   }
 }

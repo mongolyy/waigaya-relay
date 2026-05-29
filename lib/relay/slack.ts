@@ -1,11 +1,11 @@
 import type { RelayResult } from "@/lib/types";
 
-/** Webhook が無応答の場合に待ち続けないためのタイムアウト（ミリ秒）。 */
+/** Timeout in ms to avoid hanging indefinitely when the webhook is unresponsive. */
 const WEBHOOK_TIMEOUT_MS = 5000;
 
 /**
- * Slack の Incoming Webhook にメッセージを投稿する。
- * 投稿されたメッセージはチャンネルに表示され、そのまま「スレッドの起点」となる。
+ * Post a message to the Slack Incoming Webhook.
+ * The posted message appears in the channel and serves as the thread starter.
  */
 export async function postToSlack(
   webhookUrl: string | undefined,
@@ -16,7 +16,7 @@ export async function postToSlack(
       target: "slack",
       ok: false,
       skipped: true,
-      detail: "SLACK_WEBHOOK_URL が未設定のため Slack への中継をスキップしました。",
+      detail: "SLACK_WEBHOOK_URL is not set — Slack relay skipped.",
     };
   }
 
@@ -35,7 +35,7 @@ export async function postToSlack(
         target: "slack",
         ok: false,
         skipped: false,
-        detail: `Slack への投稿に失敗しました (HTTP ${res.status})${body ? `: ${body}` : ""}`,
+        detail: `Slack post failed (HTTP ${res.status})${body ? `: ${body}` : ""}`,
       };
     }
 
@@ -44,8 +44,8 @@ export async function postToSlack(
     const isTimeout = err instanceof Error && err.name === "TimeoutError";
     const errorMessage = err instanceof Error ? err.message : String(err);
     const detail = isTimeout
-      ? `Slack への投稿がタイムアウトしました（${WEBHOOK_TIMEOUT_MS}ms）。`
-      : `Slack への投稿中にエラーが発生しました: ${errorMessage}`;
+      ? `Slack post timed out (${WEBHOOK_TIMEOUT_MS}ms).`
+      : `Slack post failed: ${errorMessage}`;
     return { target: "slack", ok: false, skipped: false, detail };
   }
 }
