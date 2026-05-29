@@ -1,16 +1,16 @@
-import { defineConfig } from "vitest/config";
-import { fileURLToPath, URL } from "node:url";
+import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    environment: "node",
-    globalSetup: "./tests/e2e/setup.ts",
-    include: ["tests/e2e/**/*.test.ts"],
+    environment: 'node',
+    globalSetup: './tests/e2e/setup.ts',
+    include: ['tests/e2e/**/*.test.ts'],
     testTimeout: 30_000,
   },
   resolve: {
     alias: {
-      "@": fileURLToPath(new URL(".", import.meta.url)),
+      '@': fileURLToPath(new URL('.', import.meta.url)),
     },
   },
-});
+})
