@@ -1,5 +1,7 @@
 # waigaya-relay 📣
 
+> [English version here](./README.md)
+
 Web のチャット画面に投稿すると、その内容を **Slack** と **Microsoft Teams** に中継し、
 それぞれのチャンネルに「スレッドの起点となるメッセージ」を投稿するアプリです。
 
