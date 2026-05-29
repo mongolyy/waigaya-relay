@@ -4,7 +4,9 @@ import { fileURLToPath, URL } from "node:url";
 export default defineConfig({
   test: {
     environment: "node",
-    exclude: ["tests/e2e/**", "node_modules/**"],
+    globalSetup: "./tests/e2e/setup.ts",
+    include: ["tests/e2e/**/*.test.ts"],
+    testTimeout: 30_000,
   },
   resolve: {
     alias: {
