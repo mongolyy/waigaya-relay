@@ -28,6 +28,38 @@ Built with Next.js (App Router) and ready to deploy on **Vercel**.
 
 ---
 
+## Usage
+
+### 1. Open the chat UI
+
+Navigate to the app URL (e.g. `http://localhost:3000` locally, or the Vercel URL after deployment). You'll see the message input screen.
+
+![Initial screen — empty message input](./docs/screenshots/01_initial.png)
+
+### 2. Type a message
+
+Write a message to post. You can use newlines to add structure — the content is relayed as-is to each platform.
+
+![Message typed in the textarea](./docs/screenshots/02_with_message.png)
+
+### 3. Click Send and check results
+
+Click the **Send** button. The result for each relay target — Slack and Microsoft Teams — is shown immediately below. Unconfigured targets show as **skipped**.
+
+![After sending — success status for each target](./docs/screenshots/03_result_success.png)
+
+| Status | Meaning |
+| ------ | ------- |
+| `success` | Message was delivered to the platform |
+| `failed`  | Delivery failed (check the detail message) |
+| `skipped` | Webhook URL not configured — relay was not attempted |
+
+### 4. Reply in Slack / Teams to start the discussion
+
+Once the message lands in your Slack channel or Teams channel, team members can reply directly in the thread. That's the whole point — the relayed message becomes the starting point for a focused discussion.
+
+---
+
 ## Setup
 
 ### 1. Prerequisites
