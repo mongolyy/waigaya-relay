@@ -302,6 +302,13 @@ details[open] .guide__summary::before {
   border-color: var(--accent);
 }
 
+.reaction--reacted {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--accent);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .reaction__count {
   font-size: 0.85rem;
   font-weight: 600;

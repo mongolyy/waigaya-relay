@@ -24,6 +24,7 @@ type PostedMessage = {
   id: string
   text: string
   reactions: Record<string, number>
+  userReacted: Set<string>
   ok: boolean
   allSkipped: boolean
   results: RelayResult[]
@@ -80,6 +81,7 @@ export default function MessageComposer({ configured }: Props) {
           id: data.messageId,
           text: trimmed,
           reactions: {},
+          userReacted: new Set(),
           ok: data.ok,
           allSkipped,
           results: data.results,
@@ -97,6 +99,9 @@ export default function MessageComposer({ configured }: Props) {
   }
 
   async function handleReaction(messageId: string, emoji: string) {
+    const msg = postedMessages.find((m) => m.id === messageId)
+    if (msg?.userReacted.has(emoji)) return
+
     try {
       const res = await fetch('/api/reactions', {
         method: 'POST',
@@ -106,9 +111,12 @@ export default function MessageComposer({ configured }: Props) {
       if (!res.ok) return
       const data = (await res.json()) as ReactionsResponse
       setPostedMessages((prev) =>
-        prev.map((m) =>
-          m.id === messageId ? { ...m, reactions: data.reactions } : m,
-        ),
+        prev.map((m) => {
+          if (m.id !== messageId) return m
+          const userReacted = new Set(m.userReacted)
+          userReacted.add(emoji)
+          return { ...m, reactions: data.reactions, userReacted }
+        }),
       )
     } catch {
       // reaction failure is non-critical; silently ignore
@@ -247,13 +255,15 @@ export default function MessageComposer({ configured }: Props) {
               <div className="reactions">
                 {PRESET_EMOJIS.map((emoji) => {
                   const count = msg.reactions[emoji] ?? 0
+                  const reacted = msg.userReacted.has(emoji)
                   return (
                     <button
                       key={emoji}
                       type="button"
-                      className={`reaction ${count > 0 ? 'reaction--active' : ''}`}
+                      className={`reaction ${reacted ? 'reaction--reacted' : count > 0 ? 'reaction--active' : ''}`}
                       onClick={() => handleReaction(msg.id, emoji)}
-                      aria-label={`React with ${emoji}${count > 0 ? `, ${count}` : ''}`}
+                      disabled={reacted}
+                      aria-label={`React with ${emoji}${count > 0 ? `, ${count}` : ''}${reacted ? ' (reacted)' : ''}`}
                     >
                       {emoji}
                       {count > 0 && (
