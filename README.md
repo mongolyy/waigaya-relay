@@ -41,7 +41,7 @@ Built with Next.js (App Router) and ready to deploy on **Vercel**.
 ### 2. Install dependencies
 
 ```bash
-npm install
+npm ci
 ```
 
 ### 3. Configure environment variables
