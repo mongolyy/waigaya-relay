@@ -35,10 +35,12 @@ describe('postToSlack', () => {
 
     const [url, options] = vi.mocked(fetch).mock.calls[0]
     expect(url).toBe(WEBHOOK_URL)
-    expect(JSON.parse(options?.body as string)).toEqual({
+    // biome-ignore lint/style/noNonNullAssertion: options is guaranteed by mock setup
+    expect(JSON.parse(options!.body as string)).toEqual({
       text: 'test message',
     })
-    expect((options?.headers as Record<string, string>)['Content-Type']).toBe(
+    // biome-ignore lint/style/noNonNullAssertion: options is guaranteed by mock setup
+    expect((options!.headers as Record<string, string>)['Content-Type']).toBe(
       'application/json',
     )
   })
@@ -70,7 +72,8 @@ describe('postToSlack', () => {
     const result = await postToSlack(WEBHOOK_URL, 'hello')
     expect(result.detail).toContain('...')
     // body is capped at 200 chars + "..."
-    const bodyPart = result.detail?.split(': ')[1]
+    // biome-ignore lint/style/noNonNullAssertion: detail asserted via toContain above
+    const bodyPart = result.detail!.split(': ')[1]
     expect(bodyPart.length).toBeLessThanOrEqual(203)
   })
 
