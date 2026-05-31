@@ -14,6 +14,10 @@ This project uses **English** as the primary language. Use English for:
 
 **Exception**: `README.ja.md` and any other `.ja.md` files are intentionally written in Japanese and should remain so.
 
+## Pull Request Management
+
+When new changes are pushed to a PR branch, update the PR title and description to reflect the current state of all changes on the branch.
+
 ## Pull Request Review Comments
 
 When subscribed to PR activity, always reply to every review comment — including bot comments (e.g., Gemini, CodeRabbit). Acknowledge the finding and briefly explain the decision taken (accepted, rejected with reason, or no action needed).
