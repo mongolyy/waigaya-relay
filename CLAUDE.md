@@ -95,6 +95,7 @@ When adding new behaviour: put validation and orchestration in `lib/usecase/`, k
 Browser (app/page.tsx → MessageComposer.tsx, sends { message, sessionId })
   → POST /api/messages        (app/api/messages/route.ts)
       → relayMessage()        (lib/usecase/relayMessage.ts)
+          → createMessage(messageId, message)      (lib/store.ts)
           → getSessionThread(sessionId)            (lib/session-store.ts)
           → postToSlack({token,channel}, msg, ts?) (lib/relay/slack.ts)  ─┐ Promise.all
           → postToTeams(webhookUrl, msg)           (lib/relay/teams.ts)  ─┘
