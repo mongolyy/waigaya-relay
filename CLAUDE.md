@@ -2,6 +2,35 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Language Policy
+
+This project uses **English** as the primary language. Use English for:
+
+- Code, comments, and variable/function names
+- Commit messages and PR titles/descriptions
+- GitHub Actions workflow names and job names
+- User-facing UI text
+- All documentation except the files listed below
+
+**Exception**: `README.ja.md` and any other `.ja.md` files are intentionally written in Japanese and should remain so.
+
+**Exception**: Bilingual UI components (English primary, Japanese subtitle) are permitted where the target audience is Japanese speakers. In such cases, English must be the primary/larger text and Japanese may appear as smaller supplementary text.
+
+## Pull Request Management
+
+When new changes are pushed to a PR branch, update the PR title and description to reflect the current state of all changes on the branch.
+
+## Pull Request Review Comments
+
+When subscribed to PR activity, always reply to every review comment — including bot comments (e.g., Gemini, CodeRabbit). Acknowledge the finding and briefly explain the decision taken (accepted, rejected with reason, or no action needed).
+
+After addressing a review comment, the resolution behavior depends on who left the comment:
+
+- **Bot reviewers** (e.g., Gemini, GitHub Copilot, Claude): automatically resolve the conversation after replying. Do NOT mention the bot to avoid infinite loops.
+- **Human reviewers**: do NOT resolve the conversation. Instead, mention the reviewer (`@username`) in your reply so they are notified. The reviewer decides the next step:
+  - If satisfied → reviewer resolves the conversation themselves.
+  - If not satisfied → reviewer mentions `@claude` and asks a follow-up question.
+
 ## Documentation
 
 - `README.md` — English user-facing documentation
@@ -33,42 +62,52 @@ npx vitest run --config vitest.config.e2e.ts
 
 ## Environment Variables
 
-Copy `.env.example` to `.env.local` and set at least one of:
-- `SLACK_WEBHOOK_URL` — Slack Incoming Webhook URL
+Copy `.env.example` to `.env.local`. Configure at least one destination:
+- `SLACK_BOT_TOKEN` + `SLACK_CHANNEL_ID` — Slack bot token (`xoxb-…`, needs `chat:write`) and target channel id
 - `TEAMS_WEBHOOK_URL` — Microsoft Teams Incoming Webhook URL
 
-If both are unset, every relay is skipped and the API responds `ok: false`.
+Optional:
+- `SLACK_API_BASE_URL` — override the Slack Web API base URL (used by E2E tests to target a mock server; defaults to `https://slack.com/api`)
+- `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` — durable session→thread store; falls back to an in-memory Map when unset
+
+If no destination is configured, every relay is skipped and the API responds `ok: false`.
 
 ## Architecture
 
-**waigaya-relay** is a Next.js (App Router) app that accepts a chat message from a web UI and relays it to Slack and/or Microsoft Teams via Incoming Webhooks, creating a thread-starting post on each platform. Dependency versions are managed in `package.json` (currently Next.js 16 / React 19).
+**waigaya-relay** is a Next.js (App Router) app that accepts a chat message from a web UI and relays it to Slack (via the Web API `chat.postMessage`) and/or Microsoft Teams (via an Incoming Webhook). Each chat-log **session** posts into its own Slack thread: the first message starts a thread and its `ts` is stored per session, so subsequent messages reply into the same thread. Dependency versions are managed in `package.json` (currently Next.js 16 / React 19).
 
 ### Request flow
 
 ```
-Browser (app/page.tsx)
+Browser (app/page.tsx → MessageComposer.tsx, sends { message, sessionId })
   → POST /api/messages   (app/api/messages/route.ts)
-      → postToSlack()    (lib/relay/slack.ts)   ─┐ Promise.all (independent)
-      → postToTeams()    (lib/relay/teams.ts)   ─┘
-  ← { ok, results[] }
+      → getSessionThread(sessionId)            (lib/session-store.ts)
+      → postToSlack({token,channel}, msg, ts?) (lib/relay/slack.ts)  ─┐ Promise.all
+      → postToTeams(webhookUrl, msg)           (lib/relay/teams.ts)  ─┘
+      → saveSessionThread(sessionId, { slackThreadTs }) on first post
+  ← { ok, results[], messageId }
 ```
 
-- **`lib/types.ts`** — shared types (`RelayTarget`, `PostMessageRequest`, `RelayResponse`, `RelayResult`)
-- **`lib/config.ts`** — reads `SLACK_WEBHOOK_URL` / `TEAMS_WEBHOOK_URL` from `process.env`; never logs the values
-- **`lib/relay/slack.ts`** — posts `{ text }` JSON to Slack webhook
-- **`lib/relay/teams.ts`** — posts `MessageCard` format JSON to Teams webhook
-- **`app/api/messages/route.ts`** — validates input, fans out to both relays, assembles response
-- **`app/page.tsx`** — client component with textarea, calls the API, renders per-target status
+- **`lib/types.ts`** — shared types (`RelayTarget`, `PostMessageRequest` incl. optional `sessionId`, `PostMessageResponse`, `RelayResult` incl. optional Slack `ts`)
+- **`lib/config.ts`** — reads `SLACK_BOT_TOKEN` / `SLACK_CHANNEL_ID` / `SLACK_API_BASE_URL` / `TEAMS_WEBHOOK_URL` from `process.env`; never logs the values
+- **`lib/relay/slack.ts`** — posts to Slack `chat.postMessage` with a bearer token; threads via `thread_ts`; returns the message `ts`
+- **`lib/relay/teams.ts`** — posts `MessageCard` format JSON to the Teams webhook (no threading)
+- **`lib/session-store.ts`** — maps `sessionId → { slackThreadTs }`; Upstash Redis (REST) when configured, else in-memory Map
+- **`app/api/messages/route.ts`** — validates input, resolves the session thread, fans out to both relays, persists the thread anchor, assembles response
+- **`app/MessageComposer.tsx`** — client component; generates/persists `sessionId` in `sessionStorage`, sends it with each message, and offers a **Start new thread** button
 
 ### Key design decisions
 
 - **Both relays always run in parallel** (`Promise.all`). A failure in one does not block the other.
+- **Sessions define threads**: a `sessionId` (one per chat log) is generated client-side and persisted in `sessionStorage`. The server stores the Slack `ts` of the first post and replies into it with `thread_ts` thereafter. `sessionId` is optional server-side — when absent, the message is posted as a new top-level message.
+- **Slack uses the Web API, not a webhook**: Incoming Webhooks cannot reply into a thread, so `chat.postMessage` (bot token) is required. Slack returns HTTP 200 even on errors; the JSON `ok` field is authoritative.
+- **Teams has no threading** (Incoming Webhook limitation); a Graph API migration would be needed and is out of scope for now.
 - **Relay responses return HTTP 200** even when a configured relay fails. This prevents Vercel's CDN from replacing the JSON body with an HTML error page, which would break the frontend's `res.json()` call.
 - **Validation errors return HTTP 400** with JSON (`ok: false`, `error`) for malformed JSON, empty messages, or messages over 4000 characters.
 - **`ok` logic**: `true` only when at least one relay executed (not skipped) AND all executed relays succeeded. All-skipped → `ok: false`.
-- **Webhook timeout**: 5000 ms (`AbortSignal.timeout`) on every outbound fetch.
+- **Outbound timeout**: 5000 ms (`AbortSignal.timeout`) on every outbound fetch (Slack, Teams, Upstash).
 - **Teams payload**: uses the legacy `MessageCard` format (`@type`, `@context`, `summary`, `text`).
-- **Webhook URLs never reach the browser**: the frontend calls `/api/messages` only; the route handler reads the URLs from `process.env` server-side.
+- **Secrets never reach the browser**: the frontend calls `/api/messages` only; the route handler reads tokens/URLs from `process.env` server-side.
 
 ### Tests
 

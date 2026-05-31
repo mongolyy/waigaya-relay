@@ -14,7 +14,7 @@ Built with Next.js (App Router) and ready to deploy on **Vercel**.
 
 - Send messages from a simple web chat interface
 - Messages are posted to both **Slack** and **Microsoft Teams** simultaneously
-- Each platform receives a thread-starter message that teammates can reply to
+- **Each chat-log session posts into its own Slack thread** — all messages from one session reply into the same thread, and **Start new thread** begins a fresh one
 - If one platform fails, the other still succeeds — results for each (success / failure / skipped) are shown individually
 
 ---
@@ -23,8 +23,41 @@ Built with Next.js (App Router) and ready to deploy on **Vercel**.
 
 - [Next.js 14](https://nextjs.org/) (App Router) / React 18
 - TypeScript
-- Slack / Microsoft Teams Incoming Webhooks
+- Slack Web API (`chat.postMessage`) / Microsoft Teams Incoming Webhook
+- Upstash Redis (optional) for session→thread mapping
 - Hosting: [Vercel](https://vercel.com/)
+
+---
+
+## Usage
+
+### 1. Open the chat UI
+
+Navigate to the app URL (e.g. `http://localhost:3000` locally, or the Vercel URL after deployment). You'll see the message input screen.
+
+![Initial screen — empty message input](./docs/screenshots/01_initial.png)
+
+### 2. Type a message
+
+Write a message to post. You can use newlines to add structure — the content is relayed as-is to each platform.
+
+![Message typed in the textarea](./docs/screenshots/02_with_message.png)
+
+### 3. Click Send and check results
+
+Click the **Send** button. The result for each relay target — Slack and Microsoft Teams — is shown immediately below. Unconfigured targets show as **skipped**.
+
+![After sending — success status for each target](./docs/screenshots/03_result_success.png)
+
+| Status | Meaning |
+| ------ | ------- |
+| `success` | Message was delivered to the platform |
+| `failed`  | Delivery failed (check the detail message) |
+| `skipped` | Webhook URL not configured — relay was not attempted |
+
+### 4. Reply in Slack / Teams to start the discussion
+
+Once the message lands in your Slack channel or Teams channel, team members can reply directly in the thread. That's the whole point — the relayed message becomes the starting point for a focused discussion.
 
 ---
 
@@ -33,8 +66,9 @@ Built with Next.js (App Router) and ready to deploy on **Vercel**.
 ### 1. Prerequisites
 
 - Node.js 20+
-- Slack Incoming Webhook URL (optional)
+- Slack bot token + channel id (optional)
 - Microsoft Teams Incoming Webhook URL (optional)
+- Upstash Redis credentials (optional, recommended for production threading)
 
 > The app works with either Slack or Teams alone. Unconfigured destinations are skipped automatically.
 
@@ -46,7 +80,7 @@ npm ci
 
 ### 3. Configure environment variables
 
-Copy `.env.example` to `.env.local` and fill in your Webhook URLs.
+Copy `.env.example` to `.env.local` and fill in your credentials.
 
 ```bash
 cp .env.example .env.local
@@ -55,27 +89,42 @@ cp .env.example .env.local
 Edit `.env.local`:
 
 ```dotenv
-SLACK_WEBHOOK_URL=https://hooks.slack.com/services/xxxx/xxxx/xxxx
+SLACK_BOT_TOKEN=xoxb-xxxx
+SLACK_CHANNEL_ID=C0123456789
 TEAMS_WEBHOOK_URL=https://outlook.office.com/webhook/xxxx/IncomingWebhook/xxxx/xxxx
+
+# Optional: session → thread store (falls back to in-memory when unset)
+UPSTASH_REDIS_REST_URL=https://xxxx.upstash.io
+UPSTASH_REDIS_REST_TOKEN=xxxx
 ```
 
-> ⚠️ `.env.local` is already in `.gitignore`. **Never commit your Webhook URLs.**
+> ⚠️ `.env.local` is already in `.gitignore`. **Never commit your tokens or Webhook URLs.**
 
-#### How to get Webhook URLs
+#### How to get the credentials
 
-- **Slack**: Follow the [Incoming Webhooks](https://api.slack.com/messaging/webhooks) guide and generate a URL for your target channel.
+- **Slack**: Create a Slack app, add the `chat:write` OAuth scope, install it to your
+  workspace, and invite the bot to the target channel. Copy the **Bot User OAuth Token**
+  (`xoxb-…`) into `SLACK_BOT_TOKEN` and the channel id into `SLACK_CHANNEL_ID`.
+  The Web API (`chat.postMessage`) is required because Incoming Webhooks cannot reply
+  into a thread.
 - **Microsoft Teams**: Go to the desired channel's Connectors settings, add **Incoming Webhook**, and copy the generated URL.
+- **Upstash (optional)**: Create a Redis database at [Upstash](https://upstash.com/) and
+  copy the REST URL and token. Without it, session→thread mappings are kept in memory and
+  may be lost across serverless instances.
 
 ---
 
 ## Environment Variables
 
-| Variable            | Required | Description                                                         |
-| ------------------- | -------- | ------------------------------------------------------------------- |
-| `SLACK_WEBHOOK_URL` | Optional | Slack Incoming Webhook URL. If unset, Slack relay is skipped.       |
-| `TEAMS_WEBHOOK_URL` | Optional | Teams Incoming Webhook URL. If unset, Teams relay is skipped.       |
+| Variable                   | Required | Description                                                                       |
+| -------------------------- | -------- | --------------------------------------------------------------------------------- |
+| `SLACK_BOT_TOKEN`          | Optional | Slack bot token (`xoxb-…`) with `chat:write`. Needed together with the channel id. |
+| `SLACK_CHANNEL_ID`         | Optional | Target Slack channel id. If either Slack value is unset, the Slack relay is skipped. |
+| `TEAMS_WEBHOOK_URL`        | Optional | Teams Incoming Webhook URL. If unset, the Teams relay is skipped.                  |
+| `UPSTASH_REDIS_REST_URL`   | Optional | Upstash Redis REST URL for the session→thread store. Falls back to memory if unset. |
+| `UPSTASH_REDIS_REST_TOKEN` | Optional | Upstash Redis REST token. Required alongside the URL.                             |
 
-- At least one must be set (if both are unset, every post will be skipped and treated as a failure).
+- At least one destination (Slack or Teams) must be configured (otherwise every post is skipped and treated as a failure).
 - For local development use `.env.local`; on Vercel use **Project → Settings → Environment Variables**.
 
 ---
@@ -141,7 +190,7 @@ Example response:
 1. Push this repository to GitHub.
 2. Import it as a **New Project** on [Vercel](https://vercel.com/).
    (Next.js is auto-detected — no build configuration changes needed.)
-3. Add `SLACK_WEBHOOK_URL` and `TEAMS_WEBHOOK_URL` under **Settings → Environment Variables**.
+3. Add `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID`, `TEAMS_WEBHOOK_URL`, and (recommended) `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` under **Settings → Environment Variables**.
 4. Click **Deploy**.
 
 After deployment, the chat UI is available at the issued URL.

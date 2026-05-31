@@ -10,6 +10,7 @@ const WEBHOOK_TIMEOUT_MS = 5000
 export async function postToTeams(
   webhookUrl: string | undefined,
   message: string,
+  username?: string,
 ): Promise<RelayResult> {
   if (!webhookUrl) {
     return {
@@ -20,11 +21,12 @@ export async function postToTeams(
     }
   }
 
+  const text = username ? `**${username}**: ${message}` : message
   const payload = {
     '@type': 'MessageCard',
     '@context': 'https://schema.org/extensions',
     summary: 'waigaya-relay',
-    text: message,
+    text,
   }
 
   try {

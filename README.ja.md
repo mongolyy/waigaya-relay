@@ -17,7 +17,7 @@ Next.js（App Router）で実装しており、**Vercel にそのままデプロ
 
 - Web のチャット画面からメッセージを送信できる
 - 送信すると **Slack** と **Microsoft Teams** の両方に投稿される
-- Slack / Teams 側では、その投稿を起点にスレッド形式で会話を始められる
+- **チャットログのセッションごとに専用の Slack スレッドへ投稿** — 同一セッションのメッセージは同じスレッドに返信され、**Start new thread** で新しいスレッドを開始できる
 - Slack / Teams のどちらか一方が失敗しても、もう一方の結果は画面に表示される
   （成功 / 失敗 / スキップを個別に確認できる）
 
@@ -27,8 +27,41 @@ Next.js（App Router）で実装しており、**Vercel にそのままデプロ
 
 - [Next.js 14](https://nextjs.org/)（App Router）/ React 18
 - TypeScript
-- Slack / Microsoft Teams の Incoming Webhook
+- Slack Web API（`chat.postMessage`）/ Microsoft Teams の Incoming Webhook
+- セッションとスレッドの対応表に Upstash Redis（任意）
 - ホスティング: [Vercel](https://vercel.com/)
+
+---
+
+## 使い方
+
+### 1. チャット画面を開く
+
+アプリの URL（ローカルなら `http://localhost:3000`、デプロイ後は Vercel の URL）にアクセスします。メッセージ入力画面が表示されます。
+
+![初期画面 — メッセージ入力欄が空の状態](./docs/screenshots/01_initial.png)
+
+### 2. メッセージを入力する
+
+投稿したいメッセージを入力します。改行を使って構造的に書くことができ、入力した内容がそのまま各プラットフォームに中継されます。
+
+![メッセージを入力した状態](./docs/screenshots/02_with_message.png)
+
+### 3. 「Send」ボタンを押して結果を確認する
+
+**Send** ボタンをクリックすると、Slack と Microsoft Teams それぞれの中継結果がすぐに表示されます。Webhook URL が未設定の中継先は **skipped**（スキップ）と表示されます。
+
+![送信後 — 各中継先の成功ステータス](./docs/screenshots/03_result_success.png)
+
+| ステータス | 意味 |
+| ---------- | ---- |
+| `success`  | メッセージの配信に成功した |
+| `failed`   | 配信に失敗した（詳細メッセージを確認してください） |
+| `skipped`  | Webhook URL が未設定のため中継をスキップした |
+
+### 4. Slack / Teams で返信してスレッドを始める
+
+メッセージが Slack チャンネルや Teams チャンネルに届いたら、チームメンバーがそのメッセージにスレッドで返信できます。中継したメッセージが議論のきっかけとなり、ワイワイガヤガヤが始まります。
 
 ---
 
@@ -37,8 +70,9 @@ Next.js（App Router）で実装しており、**Vercel にそのままデプロ
 ### 1. 必要なもの
 
 - Node.js 20 以上
-- Slack の Incoming Webhook URL（任意）
+- Slack の Bot トークン + チャンネル ID（任意）
 - Microsoft Teams の Incoming Webhook URL（任意）
+- Upstash Redis の認証情報（任意・本番のスレッド維持には推奨）
 
 > Slack / Teams のどちらか一方だけでも動作します。未設定の中継先は自動的にスキップされます。
 
@@ -50,7 +84,7 @@ npm ci
 
 ### 3. 環境変数の設定
 
-`.env.example` を `.env.local` にコピーして、Webhook URL を設定します。
+`.env.example` を `.env.local` にコピーして、認証情報を設定します。
 
 ```bash
 cp .env.example .env.local
@@ -59,29 +93,42 @@ cp .env.example .env.local
 `.env.local` を編集します。
 
 ```dotenv
-SLACK_WEBHOOK_URL=https://hooks.slack.com/services/xxxx/xxxx/xxxx
+SLACK_BOT_TOKEN=xoxb-xxxx
+SLACK_CHANNEL_ID=C0123456789
 TEAMS_WEBHOOK_URL=https://outlook.office.com/webhook/xxxx/IncomingWebhook/xxxx/xxxx
+
+# 任意: セッション → スレッドの対応表（未設定時はインメモリにフォールバック）
+UPSTASH_REDIS_REST_URL=https://xxxx.upstash.io
+UPSTASH_REDIS_REST_TOKEN=xxxx
 ```
 
-> ⚠️ `.env.local` は `.gitignore` 済みです。**Webhook URL は絶対にコミットしないでください。**
+> ⚠️ `.env.local` は `.gitignore` 済みです。**トークンや Webhook URL は絶対にコミットしないでください。**
 
-#### Webhook URL の取得方法
+#### 認証情報の取得方法
 
-- **Slack**: [Incoming Webhooks](https://api.slack.com/messaging/webhooks) の手順に従い、
-  投稿先チャンネルを選んで Webhook URL を発行します。
+- **Slack**: Slack アプリを作成して `chat:write` スコープを付与し、ワークスペースにインストールして
+  Bot を対象チャンネルに招待します。**Bot User OAuth Token**（`xoxb-…`）を `SLACK_BOT_TOKEN` に、
+  チャンネル ID を `SLACK_CHANNEL_ID` に設定します。Incoming Webhook ではスレッド返信ができないため、
+  Web API（`chat.postMessage`）を使用します。
 - **Microsoft Teams**: 投稿したいチャンネルの「コネクタ」から
   **Incoming Webhook** を追加して URL を発行します。
+- **Upstash（任意）**: [Upstash](https://upstash.com/) で Redis データベースを作成し、REST URL と
+  トークンをコピーします。未設定の場合、セッション → スレッドの対応表はインメモリに保持され、
+  サーバーレス環境ではインスタンスをまたいで失われる可能性があります。
 
 ---
 
 ## 環境変数の説明
 
-| 変数名              | 必須 | 説明                                                              |
-| ------------------- | ---- | ----------------------------------------------------------------- |
-| `SLACK_WEBHOOK_URL` | 任意 | Slack Incoming Webhook の URL。未設定なら Slack への中継をスキップ。 |
-| `TEAMS_WEBHOOK_URL` | 任意 | Teams Incoming Webhook の URL。未設定なら Teams への中継をスキップ。 |
+| 変数名                     | 必須 | 説明                                                                       |
+| -------------------------- | ---- | -------------------------------------------------------------------------- |
+| `SLACK_BOT_TOKEN`          | 任意 | `chat:write` 権限を持つ Slack Bot トークン（`xoxb-…`）。チャンネル ID と併用。 |
+| `SLACK_CHANNEL_ID`         | 任意 | 投稿先の Slack チャンネル ID。いずれかが未設定なら Slack への中継をスキップ。 |
+| `TEAMS_WEBHOOK_URL`        | 任意 | Teams Incoming Webhook の URL。未設定なら Teams への中継をスキップ。        |
+| `UPSTASH_REDIS_REST_URL`   | 任意 | セッション → スレッド対応表用の Upstash Redis REST URL。未設定時はインメモリ。 |
+| `UPSTASH_REDIS_REST_TOKEN` | 任意 | Upstash Redis の REST トークン。URL と併せて設定。                          |
 
-- 少なくともどちらか一方を設定してください（両方未設定だと、すべてスキップとなり失敗します）。
+- 少なくとも Slack か Teams のどちらかを設定してください（両方未設定だと、すべてスキップとなり失敗します）。
 - ローカルでは `.env.local`、Vercel では **Project → Settings → Environment Variables** に登録します。
 
 ---
@@ -147,8 +194,8 @@ curl -X POST http://localhost:3000/api/messages \
 1. このリポジトリを GitHub に push する。
 2. [Vercel](https://vercel.com/) で **New Project** からこのリポジトリを import する。
    （Next.js は自動検出されるので、ビルド設定は変更不要です）
-3. **Settings → Environment Variables** に `SLACK_WEBHOOK_URL` と
-   `TEAMS_WEBHOOK_URL` を登録する。
+3. **Settings → Environment Variables** に `SLACK_BOT_TOKEN`・`SLACK_CHANNEL_ID`・
+   `TEAMS_WEBHOOK_URL`、および（推奨）`UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` を登録する。
 4. **Deploy** を実行する。
 
 デプロイ後は発行された URL でチャット画面を利用できます。

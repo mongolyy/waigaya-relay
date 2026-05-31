@@ -9,7 +9,14 @@ let mockServer: http.Server
 let nextProcess: ChildProcess
 
 export async function setup() {
-  mockServer = http.createServer((_req, res) => {
+  mockServer = http.createServer((req, res) => {
+    // Slack Web API (chat.postMessage) replies with JSON including `ok` and `ts`.
+    if (req.url?.startsWith('/slack-api')) {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ ok: true, ts: '1700000000.000100' }))
+      return
+    }
+    // Teams Incoming Webhook is happy with any 2xx response.
     res.writeHead(200, { 'Content-Type': 'text/plain' })
     res.end('ok')
   })
@@ -21,7 +28,9 @@ export async function setup() {
       env: {
         ...process.env,
         PORT: String(APP_PORT),
-        SLACK_WEBHOOK_URL: `http://localhost:${MOCK_PORT}/slack`,
+        SLACK_BOT_TOKEN: 'xoxb-test-token',
+        SLACK_CHANNEL_ID: 'C0TEST',
+        SLACK_API_BASE_URL: `http://localhost:${MOCK_PORT}/slack-api`,
         TEAMS_WEBHOOK_URL: `http://localhost:${MOCK_PORT}/teams`,
       },
       stdio: 'ignore',
