@@ -21,11 +21,33 @@ Built with Next.js (App Router) and ready to deploy on **Vercel**.
 
 ## Tech Stack
 
-- [Next.js 14](https://nextjs.org/) (App Router) / React 18
+- [Next.js 16](https://nextjs.org/) (App Router) / React 19
 - TypeScript
+- [Tailwind CSS v4](https://tailwindcss.com/) for styling
 - Slack Web API (`chat.postMessage`) / Microsoft Teams Incoming Webhook
 - Upstash Redis (optional) for session→thread mapping
 - Hosting: [Vercel](https://vercel.com/)
+
+---
+
+## Styling
+
+The UI uses **Tailwind CSS v4** with the `@tailwindcss/postcss` plugin. All styles are applied as utility classes directly in the JSX — there are no custom CSS class names.
+
+**Color palette:**
+
+| Role | Tailwind token | Hex |
+| ---- | -------------- | --- |
+| Page background | `slate-900` | `#0f172a` |
+| Card / panel | `slate-800` | `#1e293b` |
+| Border | `slate-700` | `#334155` |
+| Body text | `slate-200` | `#e2e8f0` |
+| Muted text | `slate-400` | `#94a3b8` |
+| Accent (links, buttons) | `indigo-500` | `#6366f1` |
+| Success | `green-500` | `#22c55e` |
+| Error | `red-500` | `#ef4444` |
+
+`app/globals.css` is intentionally minimal — it only sets `body` base styles (background, text color, font-family, line-height) and the `dialog::backdrop` rule, both of which cannot be expressed as element-level utility classes.
 
 ---
 
@@ -215,7 +237,7 @@ waigaya-relay/
 ├── app/
 │   ├── layout.tsx                 # Root layout
 │   ├── page.tsx                   # Chat UI (client component)
-│   ├── globals.css                # Styles
+│   ├── globals.css                # Tailwind import + body base styles
 │   └── api/messages/route.ts      # Message relay API (POST)
 ├── lib/
 │   ├── config.ts                  # Environment variable loading
