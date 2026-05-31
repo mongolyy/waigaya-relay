@@ -145,8 +145,65 @@ describe('POST /api/messages', () => {
 
     it('trims whitespace from the message before relaying', async () => {
       await POST(makeRequest({ message: '  hello  ' }))
-      expect(postToSlack).toHaveBeenCalledWith(expect.any(String), 'hello')
-      expect(postToTeams).toHaveBeenCalledWith(expect.any(String), 'hello')
+      expect(postToSlack).toHaveBeenCalledWith(
+        expect.any(String),
+        'hello',
+        undefined,
+      )
+      expect(postToTeams).toHaveBeenCalledWith(
+        expect.any(String),
+        'hello',
+        undefined,
+      )
+    })
+
+    it('passes username to relay functions when provided', async () => {
+      await POST(makeRequest({ message: 'hello', username: 'Alice' }))
+      expect(postToSlack).toHaveBeenCalledWith(
+        expect.any(String),
+        'hello',
+        'Alice',
+      )
+      expect(postToTeams).toHaveBeenCalledWith(
+        expect.any(String),
+        'hello',
+        'Alice',
+      )
+    })
+
+    it('passes undefined username when username is empty or whitespace', async () => {
+      await POST(makeRequest({ message: 'hello', username: '   ' }))
+      expect(postToSlack).toHaveBeenCalledWith(
+        expect.any(String),
+        'hello',
+        undefined,
+      )
+    })
+
+    it('passes undefined username when username is absent', async () => {
+      await POST(makeRequest({ message: 'hello' }))
+      expect(postToSlack).toHaveBeenCalledWith(
+        expect.any(String),
+        'hello',
+        undefined,
+      )
+    })
+
+    it('returns 400 when username exceeds 80 characters', async () => {
+      const res = await POST(
+        makeRequest({ message: 'hello', username: 'a'.repeat(81) }),
+      )
+      expect(res.status).toBe(400)
+      const data = await res.json()
+      expect(data.ok).toBe(false)
+      expect(data.error).toContain('80')
+    })
+
+    it('accepts a username of exactly 80 characters', async () => {
+      const res = await POST(
+        makeRequest({ message: 'hello', username: 'a'.repeat(80) }),
+      )
+      expect(res.status).toBe(200)
     })
 
     it('includes all relay results in the response body', async () => {

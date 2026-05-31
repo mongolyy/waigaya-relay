@@ -23,6 +23,7 @@ type FormStatus =
 type PostedMessage = {
   id: string
   text: string
+  username: string
   reactions: Record<string, number>
   userReacted: Set<string>
   ok: boolean
@@ -32,9 +33,15 @@ type PostedMessage = {
 
 interface Props {
   configured: Record<RelayTarget, boolean>
+  username: string
+  onChangeUsername: () => void
 }
 
-export default function MessageComposer({ configured }: Props) {
+export default function MessageComposer({
+  configured,
+  username,
+  onChangeUsername,
+}: Props) {
   const [message, setMessage] = useState('')
   const [formStatus, setFormStatus] = useState<FormStatus>({ kind: 'idle' })
   const [postedMessages, setPostedMessages] = useState<PostedMessage[]>([])
@@ -55,7 +62,10 @@ export default function MessageComposer({ configured }: Props) {
       const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({
+          message: trimmed,
+          ...(username ? { username } : {}),
+        }),
       })
 
       const data = (await res.json()) as
@@ -80,6 +90,7 @@ export default function MessageComposer({ configured }: Props) {
         {
           id: data.messageId,
           text: trimmed,
+          username,
           reactions: {},
           userReacted: new Set(),
           ok: data.ok,
@@ -193,6 +204,20 @@ export default function MessageComposer({ configured }: Props) {
       )}
 
       <form className="composer" onSubmit={handleSubmit}>
+        <div className="composer__identity">
+          <span className="composer__identity-name">
+            Posting as <strong>{username || 'Anonymous'}</strong>
+          </span>
+          <button
+            type="button"
+            className="composer__identity-change"
+            onClick={onChangeUsername}
+            disabled={sending}
+          >
+            Change name
+            <span className="composer__identity-change-sub">名前を変更</span>
+          </button>
+        </div>
         <label className="composer__label" htmlFor="message">
           Message
         </label>
@@ -227,6 +252,9 @@ export default function MessageComposer({ configured }: Props) {
         <section className="messages" aria-label="Posted messages">
           {postedMessages.map((msg) => (
             <article key={msg.id} className="message">
+              {msg.username && (
+                <p className="message__author">{msg.username}</p>
+              )}
               <p className="message__text">{msg.text}</p>
 
               <ul className="status__list">

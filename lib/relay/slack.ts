@@ -10,6 +10,7 @@ const WEBHOOK_TIMEOUT_MS = 5000
 export async function postToSlack(
   webhookUrl: string | undefined,
   message: string,
+  username?: string,
 ): Promise<RelayResult> {
   if (!webhookUrl) {
     return {
@@ -20,11 +21,14 @@ export async function postToSlack(
     }
   }
 
+  const payload: Record<string, string> = { text: message }
+  if (username) payload.username = username
+
   try {
     const res = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: message }),
+      body: JSON.stringify(payload),
       signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
     })
 

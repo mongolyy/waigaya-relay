@@ -130,6 +130,56 @@ details[open] .guide__summary::before {
   border-radius: 12px;
 }
 
+.composer__identity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  font-size: 0.875rem;
+}
+
+.composer__identity-name {
+  color: var(--muted);
+}
+
+.composer__identity-name strong {
+  color: var(--text);
+}
+
+.composer__identity-change {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.composer__identity-change:hover:not(:disabled) {
+  color: var(--accent-hover);
+}
+
+.composer__identity-change:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.composer__identity-change-sub {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
 .composer__label {
   font-weight: 600;
   font-size: 0.9rem;
@@ -263,6 +313,13 @@ details[open] .guide__summary::before {
   gap: 12px;
 }
 
+.message__author {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
 .message__text {
   margin: 0;
   white-space: pre-wrap;
@@ -311,4 +368,122 @@ details[open] .guide__summary::before {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--accent);
+}
+
+/* ─── Username setup modal ─────────────────────────────────────────────── */
+
+.username-dialog {
+  border: none;
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--text);
+  padding: 36px 32px;
+  width: min(420px, calc(100vw - 32px));
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+.username-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(3px);
+}
+
+.username-dialog__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.username-dialog__title {
+  margin: 0;
+  font-size: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.username-dialog__sub {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.username-dialog__desc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.username-dialog__label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.username-dialog__input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.username-dialog__input:focus {
+  outline: 2px solid var(--accent);
+  border-color: transparent;
+}
+
+.username-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.username-dialog__cancel {
+  padding: 10px 20px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.username-dialog__cancel:hover {
+  color: var(--text);
+  border-color: var(--text);
+}
+
+.username-dialog__submit {
+  padding: 10px 28px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.username-dialog__submit:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.username-dialog__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

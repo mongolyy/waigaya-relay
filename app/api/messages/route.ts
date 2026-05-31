@@ -23,10 +23,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     )
   }
 
-  const rawMessage =
-    typeof (body as { message?: unknown })?.message === 'string'
-      ? (body as { message: string }).message
-      : ''
+  const b = body as { message?: unknown; username?: unknown }
+  const rawMessage = typeof b?.message === 'string' ? b.message : ''
   const message = rawMessage.trim()
 
   if (!message) {
@@ -45,13 +43,27 @@ export async function POST(request: Request): Promise<NextResponse> {
     )
   }
 
+  const username =
+    typeof b?.username === 'string' ? b.username.trim() || undefined : undefined
+
+  const MAX_USERNAME_LENGTH = 80
+  if (username && username.length > MAX_USERNAME_LENGTH) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `Username is too long (max ${MAX_USERNAME_LENGTH} characters).`,
+      },
+      { status: 400 },
+    )
+  }
+
   const messageId = randomUUID()
   createMessage(messageId, message)
 
   // Post to Slack and Teams independently so one failure does not affect the other.
   const results: RelayResult[] = await Promise.all([
-    postToSlack(getSlackWebhookUrl(), message),
-    postToTeams(getTeamsWebhookUrl(), message),
+    postToSlack(getSlackWebhookUrl(), message, username),
+    postToTeams(getTeamsWebhookUrl(), message, username),
   ])
 
   // ok is true only when at least one relay ran and all executed relays succeeded.
