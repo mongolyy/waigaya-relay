@@ -1,14 +1,20 @@
 import { randomUUID } from 'node:crypto'
 import { NextResponse } from 'next/server'
-import { getSlackWebhookUrl, getTeamsWebhookUrl } from '@/lib/config'
+import {
+  getSlackBotToken,
+  getSlackChannelId,
+  getTeamsWebhookUrl,
+} from '@/lib/config'
 import { postToSlack } from '@/lib/relay/slack'
 import { postToTeams } from '@/lib/relay/teams'
+import { getSessionThread, saveSessionThread } from '@/lib/session-store'
 import { createMessage } from '@/lib/store'
 import type { PostMessageResponse, RelayResult } from '@/lib/types'
 
 const MAX_MESSAGE_LENGTH = 4000
+const MAX_USERNAME_LENGTH = 80
 
-// Run on the Node.js runtime to allow outbound fetch to external webhooks.
+// Run on the Node.js runtime to allow outbound fetch to external services.
 export const runtime = 'nodejs'
 
 /** Relay a message to Slack and/or Teams. */
@@ -23,9 +29,16 @@ export async function POST(request: Request): Promise<NextResponse> {
     )
   }
 
-  const b = body as { message?: unknown; username?: unknown }
+  const b = body as {
+    message?: unknown
+    username?: unknown
+    sessionId?: unknown
+  }
   const rawMessage = typeof b?.message === 'string' ? b.message : ''
   const message = rawMessage.trim()
+
+  // Optional: groups all messages of one chat log into a single thread.
+  const sessionId = typeof b?.sessionId === 'string' ? b.sessionId.trim() : ''
 
   if (!message) {
     return NextResponse.json(
@@ -46,7 +59,6 @@ export async function POST(request: Request): Promise<NextResponse> {
   const username =
     typeof b?.username === 'string' ? b.username.trim() || undefined : undefined
 
-  const MAX_USERNAME_LENGTH = 80
   if (username && username.length > MAX_USERNAME_LENGTH) {
     return NextResponse.json(
       {
@@ -60,11 +72,28 @@ export async function POST(request: Request): Promise<NextResponse> {
   const messageId = randomUUID()
   createMessage(messageId, message)
 
+  // Look up the existing Slack thread anchor for this session, if any.
+  const session = sessionId ? await getSessionThread(sessionId) : null
+  const slackThreadTs = session?.slackThreadTs
+
   // Post to Slack and Teams independently so one failure does not affect the other.
   const results: RelayResult[] = await Promise.all([
-    postToSlack(getSlackWebhookUrl(), message, username),
+    postToSlack(
+      { token: getSlackBotToken(), channel: getSlackChannelId() },
+      message,
+      { threadTs: slackThreadTs, username },
+    ),
     postToTeams(getTeamsWebhookUrl(), message, username),
   ])
+
+  // On the first successful Slack post of a session, remember its ts so later
+  // messages in the same session reply into that thread.
+  if (sessionId && !slackThreadTs) {
+    const slack = results.find((r) => r.target === 'slack')
+    if (slack?.ok && slack.ts) {
+      await saveSessionThread(sessionId, { slackThreadTs: slack.ts })
+    }
+  }
 
   // ok is true only when at least one relay ran and all executed relays succeeded.
   const executed = results.filter((r) => !r.skipped)

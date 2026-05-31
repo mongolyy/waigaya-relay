@@ -304,6 +304,34 @@ details[open] .guide__summary::before {
   gap: 16px;
 }
 
+.messages__toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.messages__new-thread {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.messages__new-thread:hover {
+  background: var(--panel);
+}
+
+.messages__new-thread-sub {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
 .message {
   background: var(--panel);
   border-radius: 12px;

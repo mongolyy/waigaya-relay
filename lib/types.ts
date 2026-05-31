@@ -1,31 +1,42 @@
-/** 中継先の識別子。将来チャンネル選択を追加する際もこの型を起点に拡張する。 */
+/** Relay destination identifier. Extend from this type when adding channels. */
 export type RelayTarget = 'slack' | 'teams'
 
-/** フロントエンドから受け取るメッセージ送信リクエスト。 */
+/** Message-send request received from the frontend. */
 export interface PostMessageRequest {
-  /** 投稿本文。 */
+  /** Message body. */
   message: string
-  /** 投稿者名（省略可）。 */
+  /** Author name (optional). Prepended to the relayed message. */
   username?: string
+  /**
+   * Client-generated session identifier. Every message in a single chat log
+   * shares the same id so they land in the same thread. Optional: when absent,
+   * the message is posted as a new top-level message without threading.
+   */
+  sessionId?: string
 }
 
-/** 1 つの中継先に対する投稿結果。 */
+/** Result of relaying to a single destination. */
 export interface RelayResult {
   target: RelayTarget
-  /** 投稿が成功したか。 */
+  /** Whether the post succeeded. */
   ok: boolean
-  /** 設定が無いなどで中継をスキップした場合 true。 */
+  /** True when the relay was skipped (e.g. not configured). */
   skipped: boolean
-  /** 失敗・スキップ時の人間向けメッセージ。 */
+  /** Human-facing message for failures or skips. */
   detail?: string
+  /**
+   * For Slack: the message timestamp (`ts`) of the posted message, used as the
+   * thread anchor for subsequent posts in the same session.
+   */
+  ts?: string
 }
 
-/** API のレスポンス全体。 */
+/** Overall API response. */
 export interface PostMessageResponse {
-  /** すべての「実行された」中継が成功したか。 */
+  /** True only when every "executed" relay succeeded. */
   ok: boolean
   results: RelayResult[]
-  /** 投稿されたメッセージの識別子。リアクション API で使用する。 */
+  /** Identifier of the posted message. Used by the reactions API. */
   messageId: string
 }
 
