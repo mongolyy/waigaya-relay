@@ -200,22 +200,13 @@ export default function MessageComposer({
 
     const flashKey = `${messageId}-${emoji}`
     setReactionFlash((prev) => ({ ...prev, [flashKey]: true }))
-    setTimeout(
-      () => setReactionFlash((prev) => ({ ...prev, [flashKey]: false })),
-      420,
-    )
 
     if (!alreadyReacted) {
-      const floatId = crypto.randomUUID()
+      const floatId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
       setFloatingEmojis((prev) => [
         ...prev,
         { id: floatId, emoji, msgId: messageId },
       ])
-      setTimeout(
-        () =>
-          setFloatingEmojis((prev) => prev.filter((fe) => fe.id !== floatId)),
-        700,
-      )
     }
 
     try {
@@ -487,12 +478,25 @@ export default function MessageComposer({
                       } ${isFlashing ? 'animate-reaction-pop' : ''}`}
                       onClick={() => handleReaction(msg.id, emoji)}
                       aria-label={`${reacted ? 'Remove reaction' : 'React with'} ${emoji}${count > 0 ? `, ${count}` : ''}`}
+                      onAnimationEnd={(e) => {
+                        if (e.target === e.currentTarget) {
+                          setReactionFlash((prev) => ({
+                            ...prev,
+                            [flashKey]: false,
+                          }))
+                        }
+                      }}
                     >
                       {floats.map((fe) => (
                         <span
                           key={fe.id}
                           className="animate-emoji-float pointer-events-none absolute bottom-full left-1/2 z-10 leading-none text-lg"
                           aria-hidden
+                          onAnimationEnd={() =>
+                            setFloatingEmojis((prev) =>
+                              prev.filter((item) => item.id !== fe.id),
+                            )
+                          }
                         >
                           {fe.emoji}
                         </span>
