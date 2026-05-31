@@ -25,11 +25,33 @@ Next.js（App Router）で実装しており、**Vercel にそのままデプロ
 
 ## 技術スタック
 
-- [Next.js 14](https://nextjs.org/)（App Router）/ React 18
+- [Next.js 16](https://nextjs.org/)（App Router）/ React 19
 - TypeScript
+- [Tailwind CSS v4](https://tailwindcss.com/)（スタイリング）
 - Slack Web API（`chat.postMessage`）/ Microsoft Teams の Incoming Webhook
 - セッションとスレッドの対応表に Upstash Redis（任意）
 - ホスティング: [Vercel](https://vercel.com/)
+
+---
+
+## スタイリング
+
+UI には **Tailwind CSS v4**（`@tailwindcss/postcss` プラグイン）を使用しています。すべてのスタイルは JSX 内のユーティリティクラスとして直接適用しており、カスタム CSS クラスは定義していません。
+
+**カラーパレット:**
+
+| 役割 | Tailwind トークン | Hex |
+| ---- | ----------------- | --- |
+| ページ背景 | `slate-900` | `#0f172a` |
+| カード / パネル | `slate-800` | `#1e293b` |
+| ボーダー | `slate-700` | `#334155` |
+| 本文テキスト | `slate-200` | `#e2e8f0` |
+| ミュートテキスト | `slate-400` | `#94a3b8` |
+| アクセント（リンク・ボタン） | `indigo-500` | `#6366f1` |
+| 成功 | `green-500` | `#22c55e` |
+| エラー | `red-500` | `#ef4444` |
+
+`app/globals.css` は最小限の内容のみ保持しています — `body` のベーススタイル（背景色・文字色・フォント・行間）と `dialog::backdrop` のルールのみです。技術的には Tailwind のユーティリティクラスでも表現できますが、グローバルなベーススタイルを 1 つの CSS ファイルにまとめた方がシンプルで、複数のコンポーネントファイルに分散させずに済みます。
 
 ---
 
@@ -223,7 +245,7 @@ waigaya-relay/
 ├── app/
 │   ├── layout.tsx                 # ルートレイアウト
 │   ├── page.tsx                   # チャット画面（クライアントコンポーネント）
-│   ├── globals.css                # スタイル
+│   ├── globals.css                # Tailwind インポート + body ベーススタイル
 │   └── api/messages/route.ts      # メッセージ送信 API (POST)
 ├── lib/
 │   ├── config.ts                  # 環境変数の読み込み
