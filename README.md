@@ -75,7 +75,7 @@ Once the message lands in your Slack channel or Teams channel, team members can 
 ### 2. Install dependencies
 
 ```bash
-npm install
+npm ci
 ```
 
 ### 3. Configure environment variables

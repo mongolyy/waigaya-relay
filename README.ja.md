@@ -79,7 +79,7 @@ Next.js（App Router）で実装しており、**Vercel にそのままデプロ
 ### 2. 依存パッケージのインストール
 
 ```bash
-npm install
+npm ci
 ```
 
 ### 3. 環境変数の設定
