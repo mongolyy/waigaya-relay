@@ -58,14 +58,21 @@ export default function UsernameSetupWidget({
       <form className="username-dialog__form" onSubmit={handleSubmit}>
         <h2 className="username-dialog__title">
           {isChanging ? 'Change your name' : 'Welcome to waigaya-relay'}
+          <span className="username-dialog__sub">
+            {isChanging ? '名前を変更' : 'ようこそ'}
+          </span>
         </h2>
         {!isChanging && (
           <p className="username-dialog__desc">
             Enter your name to identify your posts.
+            <span className="username-dialog__sub">
+              投稿に表示される名前を入力してください。
+            </span>
           </p>
         )}
         <label className="username-dialog__label" htmlFor="dialog-username">
           Your name
+          <span className="username-dialog__sub">名前</span>
         </label>
         <input
           id="dialog-username"
