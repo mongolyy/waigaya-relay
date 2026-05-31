@@ -17,10 +17,6 @@
 
 <!-- e.g. Closes #123 -->
 
-## Changes
-
-<!-- Describe the details and motivation behind the changes to help reviewers -->
-
 ## Verification
 
 <!-- Check all that apply -->
@@ -33,9 +29,9 @@
 - [ ] No lint errors with `npm run lint`
 - [ ] Build succeeds with `npm run build`
 
-## Screenshots (if UI changes)
+## Screenshots
 
-<!-- Add before/after screenshots if applicable -->
+<!-- Add before/after screenshots. If no UI changes, write "N/A" -->
 
 ## Notes for Reviewers
 
