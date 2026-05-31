@@ -23,9 +23,7 @@ export function addReaction(
   return msg
 }
 
-export function getReactions(
-  messageId: string,
-): Record<string, number> | null {
+export function getReactions(messageId: string): Record<string, number> | null {
   const msg = messages.get(messageId)
   return msg ? msg.reactions : null
 }

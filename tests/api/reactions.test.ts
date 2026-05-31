@@ -2,9 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Reset the store module between tests so reactions don't leak across test cases.
 vi.mock('@/lib/store', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/store')>(
-    '@/lib/store',
-  )
+  const actual =
+    await vi.importActual<typeof import('@/lib/store')>('@/lib/store')
   return actual
 })
 
@@ -12,10 +11,9 @@ import { GET, POST } from '@/app/api/reactions/route'
 import { createMessage } from '@/lib/store'
 
 function makeGetRequest(messageId: string): Request {
-  return new Request(
-    `http://localhost/api/reactions?messageId=${messageId}`,
-    { method: 'GET' },
-  )
+  return new Request(`http://localhost/api/reactions?messageId=${messageId}`, {
+    method: 'GET',
+  })
 }
 
 function makePostRequest(body: unknown): Request {
@@ -83,9 +81,7 @@ describe('POST /api/reactions', () => {
 
   it('accumulates multiple reactions on the same emoji', async () => {
     await POST(makePostRequest({ messageId: 'msg-2', emoji: '❤️' }))
-    const res = await POST(
-      makePostRequest({ messageId: 'msg-2', emoji: '❤️' }),
-    )
+    const res = await POST(makePostRequest({ messageId: 'msg-2', emoji: '❤️' }))
     const data = await res.json()
     expect(data.reactions['❤️']).toBe(2)
   })
