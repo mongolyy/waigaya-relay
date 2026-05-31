@@ -1,32 +1,24 @@
 import { NextResponse } from 'next/server'
-import { addReaction, getReactions, removeReaction } from '@/lib/store'
-import type { AddReactionRequest, ReactionsResponse } from '@/lib/types'
+import {
+  addReaction,
+  getReactions,
+  removeReaction,
+} from '@/lib/usecase/reaction'
+import type { AddReactionRequest } from '@/lib/types'
 
 export const runtime = 'nodejs'
 
-const ALLOWED_EMOJIS = ['👍', '❤️', '😄', '🎉', '🤔', '👀']
-
 export async function GET(request: Request): Promise<NextResponse> {
   const { searchParams } = new URL(request.url)
-  const messageId = searchParams.get('messageId')
+  const result = getReactions(searchParams.get('messageId'))
 
-  if (!messageId) {
-    return NextResponse.json(
-      { ok: false, error: 'messageId is required.' },
-      { status: 400 },
-    )
+  if (result.kind === 'validation_error') {
+    return NextResponse.json({ ok: false, error: result.error }, { status: 400 })
   }
-
-  const reactions = getReactions(messageId)
-  if (reactions === null) {
-    return NextResponse.json(
-      { ok: false, error: 'Message not found.' },
-      { status: 404 },
-    )
+  if (result.kind === 'not_found') {
+    return NextResponse.json({ ok: false, error: result.error }, { status: 404 })
   }
-
-  const response: ReactionsResponse = { reactions }
-  return NextResponse.json(response)
+  return NextResponse.json({ reactions: result.reactions })
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -48,31 +40,15 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const { messageId, emoji } = body as Partial<AddReactionRequest>
+  const result = addReaction(messageId, emoji)
 
-  if (!messageId || !emoji) {
-    return NextResponse.json(
-      { ok: false, error: 'messageId and emoji are required.' },
-      { status: 400 },
-    )
+  if (result.kind === 'validation_error') {
+    return NextResponse.json({ ok: false, error: result.error }, { status: 400 })
   }
-
-  if (!ALLOWED_EMOJIS.includes(emoji)) {
-    return NextResponse.json(
-      { ok: false, error: 'Invalid or unsupported emoji.' },
-      { status: 400 },
-    )
+  if (result.kind === 'not_found') {
+    return NextResponse.json({ ok: false, error: result.error }, { status: 404 })
   }
-
-  const msg = addReaction(messageId, emoji)
-  if (!msg) {
-    return NextResponse.json(
-      { ok: false, error: 'Message not found.' },
-      { status: 404 },
-    )
-  }
-
-  const response: ReactionsResponse = { reactions: msg.reactions }
-  return NextResponse.json(response)
+  return NextResponse.json({ reactions: result.reactions })
 }
 
 export async function DELETE(request: Request): Promise<NextResponse> {
@@ -94,29 +70,13 @@ export async function DELETE(request: Request): Promise<NextResponse> {
   }
 
   const { messageId, emoji } = body as Partial<AddReactionRequest>
+  const result = removeReaction(messageId, emoji)
 
-  if (!messageId || !emoji) {
-    return NextResponse.json(
-      { ok: false, error: 'messageId and emoji are required.' },
-      { status: 400 },
-    )
+  if (result.kind === 'validation_error') {
+    return NextResponse.json({ ok: false, error: result.error }, { status: 400 })
   }
-
-  if (!ALLOWED_EMOJIS.includes(emoji)) {
-    return NextResponse.json(
-      { ok: false, error: 'Invalid or unsupported emoji.' },
-      { status: 400 },
-    )
+  if (result.kind === 'not_found') {
+    return NextResponse.json({ ok: false, error: result.error }, { status: 404 })
   }
-
-  const msg = removeReaction(messageId, emoji)
-  if (!msg) {
-    return NextResponse.json(
-      { ok: false, error: 'Message not found.' },
-      { status: 404 },
-    )
-  }
-
-  const response: ReactionsResponse = { reactions: msg.reactions }
-  return NextResponse.json(response)
+  return NextResponse.json({ reactions: result.reactions })
 }
