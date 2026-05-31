@@ -16,8 +16,12 @@ export async function POST(request: Request): Promise<NextResponse> {
     )
   }
 
-  const b = body as { message?: unknown; username?: unknown }
-  const result = await relayMessage({ message: b?.message, username: b?.username })
+  const b = body as { message?: unknown; username?: unknown; sessionId?: unknown }
+  const result = await relayMessage({
+    message: b?.message,
+    username: b?.username,
+    sessionId: b?.sessionId,
+  })
 
   if (result.kind === 'validation_error') {
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 })

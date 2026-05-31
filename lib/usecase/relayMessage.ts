@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto'
-import { getSlackWebhookUrl, getTeamsWebhookUrl } from '@/lib/config'
+import {
+  getSlackBotToken,
+  getSlackChannelId,
+  getTeamsWebhookUrl,
+} from '@/lib/config'
 import { postToSlack } from '@/lib/relay/slack'
 import { postToTeams } from '@/lib/relay/teams'
+import { getSessionThread, saveSessionThread } from '@/lib/session-store'
 import { createMessage } from '@/lib/store'
 import type { PostMessageResponse, RelayResult } from '@/lib/types'
 
@@ -11,6 +16,7 @@ const MAX_USERNAME_LENGTH = 80
 export type RelayMessageInput = {
   message: unknown
   username?: unknown
+  sessionId?: unknown
 }
 
 export type RelayMessageResult =
@@ -45,13 +51,30 @@ export async function relayMessage(
     }
   }
 
+  const sessionId =
+    typeof input.sessionId === 'string' ? input.sessionId.trim() : ''
+
   const messageId = randomUUID()
   createMessage(messageId, message)
 
+  const session = sessionId ? await getSessionThread(sessionId) : null
+  const slackThreadTs = session?.slackThreadTs
+
   const results: RelayResult[] = await Promise.all([
-    postToSlack(getSlackWebhookUrl(), message, username),
+    postToSlack(
+      { token: getSlackBotToken(), channel: getSlackChannelId() },
+      message,
+      { threadTs: slackThreadTs, username },
+    ),
     postToTeams(getTeamsWebhookUrl(), message, username),
   ])
+
+  if (sessionId && !slackThreadTs) {
+    const slack = results.find((r) => r.target === 'slack')
+    if (slack?.ok && slack.ts) {
+      await saveSessionThread(sessionId, { slackThreadTs: slack.ts })
+    }
+  }
 
   const executed = results.filter((r) => !r.skipped)
   const ok = executed.length > 0 && executed.every((r) => r.ok)
