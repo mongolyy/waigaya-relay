@@ -63,11 +63,25 @@ describe('postToSlack', () => {
     expect(headers.Authorization).toBe('Bearer xoxb-test-token')
   })
 
+  it('prepends the username to the message text when provided', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      slackResponse({ ok: true, ts: '1.2' }),
+    )
+    await postToSlack(CONFIG, 'hello', { username: 'Alice' })
+
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    // biome-ignore lint/style/noNonNullAssertion: options is guaranteed by mock setup
+    expect(JSON.parse(options!.body as string)).toEqual({
+      channel: 'C0TEST',
+      text: '*Alice*: hello',
+    })
+  })
+
   it('includes thread_ts when posting into an existing thread', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       slackResponse({ ok: true, ts: '2.2' }),
     )
-    await postToSlack(CONFIG, 'reply', '1700000000.000100')
+    await postToSlack(CONFIG, 'reply', { threadTs: '1700000000.000100' })
 
     const [, options] = vi.mocked(fetch).mock.calls[0]
     // biome-ignore lint/style/noNonNullAssertion: options is guaranteed by mock setup

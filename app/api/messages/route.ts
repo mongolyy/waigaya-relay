@@ -12,6 +12,7 @@ import { createMessage } from '@/lib/store'
 import type { PostMessageResponse, RelayResult } from '@/lib/types'
 
 const MAX_MESSAGE_LENGTH = 4000
+const MAX_USERNAME_LENGTH = 80
 
 // Run on the Node.js runtime to allow outbound fetch to external services.
 export const runtime = 'nodejs'
@@ -28,17 +29,16 @@ export async function POST(request: Request): Promise<NextResponse> {
     )
   }
 
-  const rawMessage =
-    typeof (body as { message?: unknown })?.message === 'string'
-      ? (body as { message: string }).message
-      : ''
+  const b = body as {
+    message?: unknown
+    username?: unknown
+    sessionId?: unknown
+  }
+  const rawMessage = typeof b?.message === 'string' ? b.message : ''
   const message = rawMessage.trim()
 
   // Optional: groups all messages of one chat log into a single thread.
-  const sessionId =
-    typeof (body as { sessionId?: unknown })?.sessionId === 'string'
-      ? (body as { sessionId: string }).sessionId.trim()
-      : ''
+  const sessionId = typeof b?.sessionId === 'string' ? b.sessionId.trim() : ''
 
   if (!message) {
     return NextResponse.json(
@@ -56,6 +56,19 @@ export async function POST(request: Request): Promise<NextResponse> {
     )
   }
 
+  const username =
+    typeof b?.username === 'string' ? b.username.trim() || undefined : undefined
+
+  if (username && username.length > MAX_USERNAME_LENGTH) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `Username is too long (max ${MAX_USERNAME_LENGTH} characters).`,
+      },
+      { status: 400 },
+    )
+  }
+
   const messageId = randomUUID()
   createMessage(messageId, message)
 
@@ -68,9 +81,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     postToSlack(
       { token: getSlackBotToken(), channel: getSlackChannelId() },
       message,
-      slackThreadTs,
+      { threadTs: slackThreadTs, username },
     ),
-    postToTeams(getTeamsWebhookUrl(), message),
+    postToTeams(getTeamsWebhookUrl(), message, username),
   ])
 
   // On the first successful Slack post of a session, remember its ts so later

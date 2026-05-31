@@ -162,9 +162,13 @@ describe('POST /api/messages', () => {
           channel: 'C0TEST',
         }),
         'hello',
+        { threadTs: undefined, username: undefined },
+      )
+      expect(postToTeams).toHaveBeenCalledWith(
+        expect.any(String),
+        'hello',
         undefined,
       )
-      expect(postToTeams).toHaveBeenCalledWith(expect.any(String), 'hello')
     })
 
     it('includes all relay results in the response body', async () => {
@@ -177,16 +181,63 @@ describe('POST /api/messages', () => {
     })
   })
 
+  describe('username', () => {
+    it('passes username to both relays when provided', async () => {
+      await POST(makeRequest({ message: 'hello', username: 'Alice' }))
+      expect(postToSlack).toHaveBeenCalledWith(
+        expect.any(Object),
+        'hello',
+        expect.objectContaining({ username: 'Alice' }),
+      )
+      expect(postToTeams).toHaveBeenCalledWith(
+        expect.any(String),
+        'hello',
+        'Alice',
+      )
+    })
+
+    it('passes undefined username when empty or whitespace', async () => {
+      await POST(makeRequest({ message: 'hello', username: '   ' }))
+      expect(postToSlack).toHaveBeenCalledWith(
+        expect.any(Object),
+        'hello',
+        expect.objectContaining({ username: undefined }),
+      )
+      expect(postToTeams).toHaveBeenCalledWith(
+        expect.any(String),
+        'hello',
+        undefined,
+      )
+    })
+
+    it('returns 400 when username exceeds 80 characters', async () => {
+      const res = await POST(
+        makeRequest({ message: 'hello', username: 'a'.repeat(81) }),
+      )
+      expect(res.status).toBe(400)
+      const data = await res.json()
+      expect(data.ok).toBe(false)
+      expect(data.error).toContain('80')
+    })
+
+    it('accepts a username of exactly 80 characters', async () => {
+      const res = await POST(
+        makeRequest({ message: 'hello', username: 'a'.repeat(80) }),
+      )
+      expect(res.status).toBe(200)
+    })
+  })
+
   describe('session threading', () => {
     it('starts a new thread and saves its ts on the first post of a session', async () => {
       vi.mocked(getSessionThread).mockResolvedValueOnce(null)
       await POST(makeRequest({ message: 'first', sessionId: 'sess-1' }))
 
-      // No existing thread → Slack is called without thread_ts.
+      // No existing thread → Slack is called without a thread_ts.
       expect(postToSlack).toHaveBeenCalledWith(
         expect.any(Object),
         'first',
-        undefined,
+        expect.objectContaining({ threadTs: undefined }),
       )
       // The returned ts is persisted as the session's thread anchor.
       expect(saveSessionThread).toHaveBeenCalledWith('sess-1', {
@@ -203,7 +254,7 @@ describe('POST /api/messages', () => {
       expect(postToSlack).toHaveBeenCalledWith(
         expect.any(Object),
         'second',
-        '1700000000.000100',
+        expect.objectContaining({ threadTs: '1700000000.000100' }),
       )
       // The anchor already exists, so it is not rewritten.
       expect(saveSessionThread).not.toHaveBeenCalled()

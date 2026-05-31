@@ -11,6 +11,13 @@ export interface SlackConfig {
   channel: string | undefined
 }
 
+export interface SlackPostOptions {
+  /** When set, post as a reply within this thread (the parent message `ts`). */
+  threadTs?: string
+  /** Author name; prepended to the message text when present. */
+  username?: string
+}
+
 /**
  * Post a message to Slack via the Web API (`chat.postMessage`).
  *
@@ -18,11 +25,14 @@ export interface SlackConfig {
  * thread; otherwise it starts a new top-level message. On success the returned
  * result carries `ts`, the timestamp of the posted message, which the caller
  * stores as the thread anchor for later posts in the same session.
+ *
+ * The author name (when given) is prepended to the message text so it works
+ * with only the `chat:write` scope and reads clearly inside a thread.
  */
 export async function postToSlack(
   { token, channel }: SlackConfig,
   message: string,
-  threadTs?: string,
+  { threadTs, username }: SlackPostOptions = {},
 ): Promise<RelayResult> {
   if (!token || !channel) {
     return {
@@ -34,6 +44,8 @@ export async function postToSlack(
     }
   }
 
+  const text = username ? `*${username}*: ${message}` : message
+
   try {
     const res = await fetch(`${getSlackApiBaseUrl()}/chat.postMessage`, {
       method: 'POST',
@@ -43,7 +55,7 @@ export async function postToSlack(
       },
       body: JSON.stringify({
         channel,
-        text: message,
+        text,
         ...(threadTs ? { thread_ts: threadTs } : {}),
       }),
       signal: AbortSignal.timeout(SLACK_TIMEOUT_MS),

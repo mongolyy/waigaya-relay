@@ -5,6 +5,8 @@ export type RelayTarget = 'slack' | 'teams'
 export interface PostMessageRequest {
   /** Message body. */
   message: string
+  /** Author name (optional). Prepended to the relayed message. */
+  username?: string
   /**
    * Client-generated session identifier. Every message in a single chat log
    * shares the same id so they land in the same thread. Optional: when absent,
