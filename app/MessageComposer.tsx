@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type {
   PostMessageResponse,
   ReactionsResponse,
@@ -46,47 +46,40 @@ function UserAvatar({ name }: { name: string }) {
 
 type FloatingEmoji = { id: string; emoji: string; msgId: string }
 
-/** sessionStorage key holding the current chat-log session id. */
+/** sessionStorage key holding the current conversation code. */
 const SESSION_KEY = 'waigaya-relay:sessionId'
 
-/**
- * In-memory fallback used when sessionStorage is unavailable (e.g. private
- * browsing or blocked storage). Threading still works within the page lifetime.
- */
-let fallbackSessionId: string | null = null
-
-/**
- * Return the current session id, generating and persisting one on first use.
- * All messages sent with the same id are grouped into a single thread.
- */
-function getSessionId(): string {
-  let id: string | null = null
+function saveCode(code: string): void {
   try {
-    id = window.sessionStorage.getItem(SESSION_KEY)
+    window.sessionStorage.setItem(SESSION_KEY, code)
   } catch {
-    // sessionStorage unavailable — fall back to the in-memory id.
+    // sessionStorage unavailable — code lives only in component state.
   }
-  if (!id) {
-    id = fallbackSessionId ?? crypto.randomUUID()
-    try {
-      window.sessionStorage.setItem(SESSION_KEY, id)
-    } catch {
-      // sessionStorage unavailable — keep the id in memory only.
-    }
-    fallbackSessionId = id
-  }
-  return id
 }
 
-/** Start a fresh session so subsequent messages open a new thread. */
-function resetSessionId(): void {
-  const newId = crypto.randomUUID()
-  try {
-    window.sessionStorage.setItem(SESSION_KEY, newId)
-  } catch {
-    // sessionStorage unavailable — keep the id in memory only.
+const CODE_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
+const CODE_LENGTH = 12
+
+function generateCode(): string {
+  const bytes = new Uint8Array(CODE_LENGTH)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (b) => CODE_CHARS[b % CODE_CHARS.length]).join('')
+}
+
+function loadOrCreateCode(initialCode?: string): string {
+  if (initialCode) {
+    saveCode(initialCode)
+    return initialCode
   }
-  fallbackSessionId = newId
+  try {
+    const stored = window.sessionStorage.getItem(SESSION_KEY)
+    if (stored) return stored
+  } catch {
+    // sessionStorage unavailable
+  }
+  const newCode = generateCode()
+  saveCode(newCode)
+  return newCode
 }
 
 type FormStatus =
@@ -109,13 +102,20 @@ interface Props {
   configured: Record<RelayTarget, boolean>
   username: string
   onChangeUsername: () => void
+  initialCode?: string
 }
 
 export default function MessageComposer({
   configured,
   username,
   onChangeUsername,
+  initialCode,
 }: Props) {
+  const [conversationCode, setConversationCode] = useState(() =>
+    loadOrCreateCode(initialCode),
+  )
+  const [joinInput, setJoinInput] = useState('')
+  const [copyLabel, setCopyLabel] = useState<'copy' | 'copied'>('copy')
   const [message, setMessage] = useState('')
   const [formStatus, setFormStatus] = useState<FormStatus>({ kind: 'idle' })
   const [postedMessages, setPostedMessages] = useState<PostedMessage[]>([])
@@ -142,7 +142,7 @@ export default function MessageComposer({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: trimmed,
-          sessionId: getSessionId(),
+          sessionId: conversationCode,
           ...(username ? { username } : {}),
         }),
       })
@@ -189,10 +189,33 @@ export default function MessageComposer({
   }
 
   function handleNewThread() {
-    resetSessionId()
+    const newCode = generateCode()
+    saveCode(newCode)
+    setConversationCode(newCode)
     setPostedMessages([])
     setFormStatus({ kind: 'idle' })
   }
+
+  function handleJoin(e: React.FormEvent) {
+    e.preventDefault()
+    const code = joinInput.trim()
+    if (!code) return
+    saveCode(code)
+    setConversationCode(code)
+    setJoinInput('')
+    setPostedMessages([])
+    setFormStatus({ kind: 'idle' })
+  }
+
+  const handleCopyCode = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(conversationCode)
+      setCopyLabel('copied')
+      setTimeout(() => setCopyLabel('copy'), 2000)
+    } catch {
+      // clipboard unavailable — silently ignore
+    }
+  }, [conversationCode])
 
   async function handleReaction(messageId: string, emoji: string) {
     const msg = postedMessages.find((m) => m.id === messageId)
@@ -360,6 +383,48 @@ export default function MessageComposer({
             Change name
             <span className="text-[0.7rem] text-slate-400">名前を変更</span>
           </button>
+        </div>
+
+        <div className="flex flex-col gap-2 px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="text-slate-400 text-xs">
+                Conversation code
+                <span className="ml-1.5 text-slate-500">会話コード</span>
+              </span>
+              <code className="font-mono text-slate-200 truncate">
+                {conversationCode}
+              </code>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 px-2.5 py-1 rounded border border-slate-700 bg-transparent text-slate-400 text-xs cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors"
+              onClick={handleCopyCode}
+            >
+              {copyLabel === 'copied' ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
+
+          <form
+            className="flex items-center gap-2 pt-1 border-t border-slate-800"
+            onSubmit={handleJoin}
+          >
+            <input
+              className="flex-1 min-w-0 px-2.5 py-1 rounded border border-slate-700 bg-slate-800 text-slate-200 font-mono text-xs placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-transparent"
+              type="text"
+              placeholder="Enter code to join another conversation…"
+              value={joinInput}
+              onChange={(e) => setJoinInput(e.target.value)}
+              disabled={sending}
+            />
+            <button
+              type="submit"
+              className="shrink-0 px-2.5 py-1 rounded border border-slate-700 bg-transparent text-slate-400 text-xs cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={sending || !joinInput.trim()}
+            >
+              Join
+            </button>
+          </form>
         </div>
         <label className="font-semibold text-sm" htmlFor="message">
           Message
