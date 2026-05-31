@@ -15,6 +15,37 @@ const TARGET_LABEL: Record<RelayTarget, string> = {
 
 const PRESET_EMOJIS = ['👍', '❤️', '😄', '🎉', '🤔', '👀']
 
+const AVATAR_COLORS = [
+  '#f97316',
+  '#a855f7',
+  '#06b6d4',
+  '#10b981',
+  '#f43f5e',
+  '#eab308',
+  '#3b82f6',
+  '#ec4899',
+]
+
+function getAvatarColor(name: string): string {
+  let hash = 0
+  for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) & 0xffff
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
+}
+
+function UserAvatar({ name }: { name: string }) {
+  return (
+    <span
+      className="shrink-0 inline-flex w-7 h-7 rounded-full items-center justify-center text-xs font-bold text-white select-none"
+      style={{ backgroundColor: getAvatarColor(name) }}
+      aria-hidden
+    >
+      {name.charAt(0).toUpperCase()}
+    </span>
+  )
+}
+
+type FloatingEmoji = { id: string; emoji: string; msgId: string }
+
 /** sessionStorage key holding the current chat-log session id. */
 const SESSION_KEY = 'waigaya-relay:sessionId'
 
@@ -88,6 +119,10 @@ export default function MessageComposer({
   const [message, setMessage] = useState('')
   const [formStatus, setFormStatus] = useState<FormStatus>({ kind: 'idle' })
   const [postedMessages, setPostedMessages] = useState<PostedMessage[]>([])
+  const [reactionFlash, setReactionFlash] = useState<Record<string, boolean>>(
+    {},
+  )
+  const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([])
 
   const sending = formStatus.kind === 'sending'
   const unconfigured = (Object.keys(configured) as RelayTarget[]).filter(
@@ -162,6 +197,26 @@ export default function MessageComposer({
   async function handleReaction(messageId: string, emoji: string) {
     const msg = postedMessages.find((m) => m.id === messageId)
     const alreadyReacted = msg?.userReacted.has(emoji) ?? false
+
+    const flashKey = `${messageId}-${emoji}`
+    setReactionFlash((prev) => ({ ...prev, [flashKey]: true }))
+    setTimeout(
+      () => setReactionFlash((prev) => ({ ...prev, [flashKey]: false })),
+      420,
+    )
+
+    if (!alreadyReacted) {
+      const floatId = crypto.randomUUID()
+      setFloatingEmojis((prev) => [
+        ...prev,
+        { id: floatId, emoji, msgId: messageId },
+      ])
+      setTimeout(
+        () =>
+          setFloatingEmojis((prev) => prev.filter((fe) => fe.id !== floatId)),
+        700,
+      )
+    }
 
     try {
       const res = await fetch('/api/reactions', {
@@ -365,12 +420,18 @@ export default function MessageComposer({
           {postedMessages.map((msg) => (
             <article
               key={msg.id}
-              className="bg-slate-800 rounded-xl px-5 py-4 flex flex-col gap-3"
+              className="animate-message-in bg-slate-800 rounded-xl px-5 py-4 flex flex-col gap-3"
             >
               {msg.username && (
-                <p className="m-0 text-xs font-semibold text-indigo-400">
-                  {msg.username}
-                </p>
+                <div className="flex items-center gap-2">
+                  <UserAvatar name={msg.username} />
+                  <span
+                    className="text-xs font-semibold"
+                    style={{ color: getAvatarColor(msg.username) }}
+                  >
+                    {msg.username}
+                  </span>
+                </div>
               )}
               <p className="m-0 whitespace-pre-wrap break-words">{msg.text}</p>
 
@@ -408,20 +469,34 @@ export default function MessageComposer({
                 {PRESET_EMOJIS.map((emoji) => {
                   const count = msg.reactions[emoji] ?? 0
                   const reacted = msg.userReacted.has(emoji)
+                  const flashKey = `${msg.id}-${emoji}`
+                  const isFlashing = reactionFlash[flashKey] ?? false
+                  const floats = floatingEmojis.filter(
+                    (fe) => fe.msgId === msg.id && fe.emoji === emoji,
+                  )
                   return (
                     <button
                       key={emoji}
                       type="button"
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-slate-200 cursor-pointer text-base transition-all duration-150 hover:bg-indigo-500/15 hover:border-indigo-500 ${
+                      className={`relative overflow-visible inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-slate-200 cursor-pointer text-base transition-all duration-150 hover:bg-indigo-500/15 hover:border-indigo-500 ${
                         reacted
                           ? 'bg-indigo-500/30 border-indigo-500'
                           : count > 0
                             ? 'bg-indigo-500/20 border-indigo-500'
                             : 'bg-transparent border-slate-700'
-                      }`}
+                      } ${isFlashing ? 'animate-reaction-pop' : ''}`}
                       onClick={() => handleReaction(msg.id, emoji)}
                       aria-label={`${reacted ? 'Remove reaction' : 'React with'} ${emoji}${count > 0 ? `, ${count}` : ''}`}
                     >
+                      {floats.map((fe) => (
+                        <span
+                          key={fe.id}
+                          className="animate-emoji-float pointer-events-none absolute bottom-full left-1/2 z-10 leading-none text-lg"
+                          aria-hidden
+                        >
+                          {fe.emoji}
+                        </span>
+                      ))}
                       {emoji}
                       {count > 0 && (
                         <span className="text-[0.85rem] font-semibold text-indigo-400">
