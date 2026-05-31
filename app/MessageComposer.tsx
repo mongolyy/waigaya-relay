@@ -159,10 +159,14 @@ export default function MessageComposer({
               The message is posted simultaneously to all configured
               destinations (Slack and Microsoft Teams)
             </li>
-            <li>Results are displayed at the bottom of the screen</li>
+            <li>
+              Results are displayed at the bottom of the screen
+            </li>
           </ol>
           <ul className="guide__notes">
-            <li>Maximum 4,000 characters</li>
+            <li>
+              Maximum 4,000 characters
+            </li>
             <li>
               Configure destinations via <code>SLACK_WEBHOOK_URL</code> /{' '}
               <code>TEAMS_WEBHOOK_URL</code> environment variables
