@@ -1,35 +1,64 @@
+import { getSlackApiBaseUrl } from '@/lib/config'
 import type { RelayResult } from '@/lib/types'
 
-/** Timeout in ms to avoid hanging indefinitely when the webhook is unresponsive. */
-const WEBHOOK_TIMEOUT_MS = 5000
+/** Timeout in ms to avoid hanging indefinitely when Slack is unresponsive. */
+const SLACK_TIMEOUT_MS = 5000
+
+export interface SlackConfig {
+  /** Bot token (`xoxb-…`). */
+  token: string | undefined
+  /** Target channel id. */
+  channel: string | undefined
+}
+
+export interface SlackPostOptions {
+  /** When set, post as a reply within this thread (the parent message `ts`). */
+  threadTs?: string
+  /** Author name; prepended to the message text when present. */
+  username?: string
+}
 
 /**
- * Post a message to the Slack Incoming Webhook.
- * The posted message appears in the channel and serves as the thread starter.
+ * Post a message to Slack via the Web API (`chat.postMessage`).
+ *
+ * When `threadTs` is provided the message is posted as a reply within that
+ * thread; otherwise it starts a new top-level message. On success the returned
+ * result carries `ts`, the timestamp of the posted message, which the caller
+ * stores as the thread anchor for later posts in the same session.
+ *
+ * The author name (when given) is prepended to the message text so it works
+ * with only the `chat:write` scope and reads clearly inside a thread.
  */
 export async function postToSlack(
-  webhookUrl: string | undefined,
+  { token, channel }: SlackConfig,
   message: string,
-  username?: string,
+  { threadTs, username }: SlackPostOptions = {},
 ): Promise<RelayResult> {
-  if (!webhookUrl) {
+  if (!token || !channel) {
     return {
       target: 'slack',
       ok: false,
       skipped: true,
-      detail: 'SLACK_WEBHOOK_URL is not set — Slack relay skipped.',
+      detail:
+        'SLACK_BOT_TOKEN / SLACK_CHANNEL_ID is not set — Slack relay skipped.',
     }
   }
 
-  const payload: Record<string, string> = { text: message }
-  if (username) payload.username = username
+  const text = username ? `*${username}*: ${message}` : message
 
   try {
-    const res = await fetch(webhookUrl, {
+    const res = await fetch(`${getSlackApiBaseUrl()}/chat.postMessage`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        channel,
+        text,
+        ...(threadTs ? { thread_ts: threadTs } : {}),
+      }),
+      signal: AbortSignal.timeout(SLACK_TIMEOUT_MS),
     })
 
     if (!res.ok) {
@@ -44,12 +73,29 @@ export async function postToSlack(
       }
     }
 
-    return { target: 'slack', ok: true, skipped: false }
+    // Slack returns HTTP 200 even on application errors; the JSON `ok` field is
+    // authoritative, and `ts` is only present on success.
+    const data = (await res.json().catch(() => null)) as {
+      ok?: boolean
+      ts?: string
+      error?: string
+    } | null
+
+    if (!data?.ok) {
+      return {
+        target: 'slack',
+        ok: false,
+        skipped: false,
+        detail: `Slack post failed: ${data?.error ?? 'unknown_error'}`,
+      }
+    }
+
+    return { target: 'slack', ok: true, skipped: false, ts: data.ts }
   } catch (err) {
     const isTimeout = err instanceof Error && err.name === 'TimeoutError'
     const errorMessage = err instanceof Error ? err.message : String(err)
     const detail = isTimeout
-      ? `Slack post timed out (${WEBHOOK_TIMEOUT_MS}ms).`
+      ? `Slack post timed out (${SLACK_TIMEOUT_MS}ms).`
       : `Slack post failed: ${errorMessage}`
     return { target: 'slack', ok: false, skipped: false, detail }
   }
