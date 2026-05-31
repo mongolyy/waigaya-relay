@@ -70,7 +70,7 @@ body {
 }
 
 .guide__summary::before {
-  content: '▶';
+  content: "▶";
   font-size: 0.7rem;
   transition: transform 0.2s ease;
 }
