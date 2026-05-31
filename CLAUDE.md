@@ -14,6 +14,8 @@ This project uses **English** as the primary language. Use English for:
 
 **Exception**: `README.ja.md` and any other `.ja.md` files are intentionally written in Japanese and should remain so.
 
+**Exception**: Bilingual UI components (English primary, Japanese subtitle) are permitted where the target audience is Japanese speakers. In such cases, English must be the primary/larger text and Japanese may appear as smaller supplementary text.
+
 ## Pull Request Management
 
 When new changes are pushed to a PR branch, update the PR title and description to reflect the current state of all changes on the branch.
