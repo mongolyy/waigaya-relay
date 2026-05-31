@@ -32,9 +32,15 @@ type PostedMessage = {
 
 interface Props {
   configured: Record<RelayTarget, boolean>
+  username: string
+  onChangeUsername: () => void
 }
 
-export default function MessageComposer({ configured }: Props) {
+export default function MessageComposer({
+  configured,
+  username,
+  onChangeUsername,
+}: Props) {
   const [message, setMessage] = useState('')
   const [formStatus, setFormStatus] = useState<FormStatus>({ kind: 'idle' })
   const [postedMessages, setPostedMessages] = useState<PostedMessage[]>([])
@@ -55,7 +61,10 @@ export default function MessageComposer({ configured }: Props) {
       const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({
+          message: trimmed,
+          ...(username ? { username } : {}),
+        }),
       })
 
       const data = (await res.json()) as
@@ -193,6 +202,20 @@ export default function MessageComposer({ configured }: Props) {
       )}
 
       <form className="composer" onSubmit={handleSubmit}>
+        <div className="composer__identity">
+          <span className="composer__identity-name">
+            Posting as <strong>{username || 'Anonymous'}</strong>
+          </span>
+          <button
+            type="button"
+            className="composer__identity-change"
+            onClick={onChangeUsername}
+            disabled={sending}
+          >
+            Change name
+            <span className="composer__identity-change-sub">名前を変更</span>
+          </button>
+        </div>
         <label className="composer__label" htmlFor="message">
           Message
         </label>

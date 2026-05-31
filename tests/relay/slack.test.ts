@@ -45,6 +45,28 @@ describe('postToSlack', () => {
     )
   })
 
+  it('includes username in the payload when provided', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('ok', { status: 200 }))
+    await postToSlack(WEBHOOK_URL, 'test message', 'Alice')
+
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    // biome-ignore lint/style/noNonNullAssertion: options is guaranteed by mock setup
+    expect(JSON.parse(options!.body as string)).toEqual({
+      text: 'test message',
+      username: 'Alice',
+    })
+  })
+
+  it('omits username from payload when not provided', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('ok', { status: 200 }))
+    await postToSlack(WEBHOOK_URL, 'test message')
+
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    // biome-ignore lint/style/noNonNullAssertion: options is guaranteed by mock setup
+    const payload = JSON.parse(options!.body as string)
+    expect(payload).not.toHaveProperty('username')
+  })
+
   it('returns ok:false with HTTP status when webhook returns non-2xx', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response('', { status: 400 }))
     const result = await postToSlack(WEBHOOK_URL, 'hello')

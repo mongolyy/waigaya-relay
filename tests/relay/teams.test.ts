@@ -47,6 +47,26 @@ describe('postToTeams', () => {
     )
   })
 
+  it('prepends username to text when provided', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('1', { status: 200 }))
+    await postToTeams(WEBHOOK_URL, 'test message', 'Bob')
+
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    // biome-ignore lint/style/noNonNullAssertion: options is guaranteed by mock setup
+    const payload = JSON.parse(options!.body as string)
+    expect(payload.text).toBe('**Bob**: test message')
+  })
+
+  it('sends plain text when username is not provided', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('1', { status: 200 }))
+    await postToTeams(WEBHOOK_URL, 'test message')
+
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    // biome-ignore lint/style/noNonNullAssertion: options is guaranteed by mock setup
+    const payload = JSON.parse(options!.body as string)
+    expect(payload.text).toBe('test message')
+  })
+
   it('returns ok:false with HTTP status when webhook returns non-2xx', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response('', { status: 400 }))
     const result = await postToTeams(WEBHOOK_URL, 'hello')

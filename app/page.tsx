@@ -1,12 +1,18 @@
+import { cookies } from 'next/headers'
 import { getSlackWebhookUrl, getTeamsWebhookUrl } from '@/lib/config'
-import MessageComposer from './MessageComposer'
+import AppShell from './AppShell'
+import { USERNAME_COOKIE } from './AppShell'
 
 export const dynamic = 'force-dynamic'
 
-export default function Page() {
+export default async function Page() {
+  const cookieStore = await cookies()
+  const username = cookieStore.get(USERNAME_COOKIE)?.value ?? ''
+
   const configured = {
     slack: !!getSlackWebhookUrl(),
     teams: !!getTeamsWebhookUrl(),
   }
-  return <MessageComposer configured={configured} />
+
+  return <AppShell initialUsername={username} configured={configured} />
 }

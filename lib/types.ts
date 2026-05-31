@@ -5,6 +5,8 @@ export type RelayTarget = 'slack' | 'teams'
 export interface PostMessageRequest {
   /** 投稿本文。 */
   message: string
+  /** 投稿者名（省略可）。 */
+  username?: string
 }
 
 /** 1 つの中継先に対する投稿結果。 */
