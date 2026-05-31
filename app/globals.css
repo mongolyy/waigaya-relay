@@ -106,8 +106,15 @@ details[open] .guide__summary::before {
   gap: 4px;
 }
 
+.guide__sub {
+  display: block;
+  font-size: 0.85em;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
 .guide__notes code {
-  background: #0f172a;
+  background: var(--bg);
   padding: 1px 5px;
   border-radius: 4px;
   font-size: 0.85em;

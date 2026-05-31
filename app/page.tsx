@@ -69,20 +69,42 @@ export default function Home() {
           <ol className="guide__steps">
             <li>
               メッセージを入力して <strong>Send</strong> を押す
+              <span className="guide__sub">
+                Enter a message and press <strong>Send</strong>
+              </span>
             </li>
             <li>
               設定済みの送信先（Slack・Microsoft Teams）に同時に投稿される
+              <span className="guide__sub">
+                The message is posted simultaneously to all configured
+                destinations (Slack and Microsoft Teams)
+              </span>
             </li>
-            <li>送信結果は画面下部に表示される</li>
+            <li>
+              送信結果は画面下部に表示される
+              <span className="guide__sub">
+                Results are displayed at the bottom of the screen
+              </span>
+            </li>
           </ol>
           <ul className="guide__notes">
-            <li>メッセージは最大 4,000 文字</li>
+            <li>
+              メッセージは最大 4,000 文字
+              <span className="guide__sub">Maximum 4,000 characters</span>
+            </li>
             <li>
               送信先は環境変数 <code>SLACK_WEBHOOK_URL</code> /{' '}
               <code>TEAMS_WEBHOOK_URL</code> で設定
+              <span className="guide__sub">
+                Configure destinations via <code>SLACK_WEBHOOK_URL</code> /{' '}
+                <code>TEAMS_WEBHOOK_URL</code> environment variables
+              </span>
             </li>
             <li>
               未設定の送信先は <em>skipped</em> と表示される
+              <span className="guide__sub">
+                Unconfigured destinations are shown as <em>skipped</em>
+              </span>
             </li>
           </ul>
         </div>
