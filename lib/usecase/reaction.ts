@@ -22,20 +22,28 @@ export function getReactions(messageId: string | null): ReactionResult {
   return { kind: 'success', reactions }
 }
 
+function validateReaction(
+  messageId: string | undefined,
+  emoji: string | undefined,
+): { messageId: string; emoji: string } | { error: string } {
+  if (!messageId || !emoji) {
+    return { error: 'messageId and emoji are required.' }
+  }
+  if (!ALLOWED_EMOJIS.includes(emoji)) {
+    return { error: 'Invalid or unsupported emoji.' }
+  }
+  return { messageId, emoji }
+}
+
 export function addReaction(
   messageId: string | undefined,
   emoji: string | undefined,
 ): ReactionResult {
-  if (!messageId || !emoji) {
-    return {
-      kind: 'validation_error',
-      error: 'messageId and emoji are required.',
-    }
+  const validation = validateReaction(messageId, emoji)
+  if ('error' in validation) {
+    return { kind: 'validation_error', error: validation.error }
   }
-  if (!ALLOWED_EMOJIS.includes(emoji)) {
-    return { kind: 'validation_error', error: 'Invalid or unsupported emoji.' }
-  }
-  const msg = storeAddReaction(messageId, emoji)
+  const msg = storeAddReaction(validation.messageId, validation.emoji)
   if (!msg) {
     return { kind: 'not_found', error: 'Message not found.' }
   }
@@ -46,16 +54,11 @@ export function removeReaction(
   messageId: string | undefined,
   emoji: string | undefined,
 ): ReactionResult {
-  if (!messageId || !emoji) {
-    return {
-      kind: 'validation_error',
-      error: 'messageId and emoji are required.',
-    }
+  const validation = validateReaction(messageId, emoji)
+  if ('error' in validation) {
+    return { kind: 'validation_error', error: validation.error }
   }
-  if (!ALLOWED_EMOJIS.includes(emoji)) {
-    return { kind: 'validation_error', error: 'Invalid or unsupported emoji.' }
-  }
-  const msg = storeRemoveReaction(messageId, emoji)
+  const msg = storeRemoveReaction(validation.messageId, validation.emoji)
   if (!msg) {
     return { kind: 'not_found', error: 'Message not found.' }
   }
