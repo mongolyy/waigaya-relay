@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers'
 import { getSlackWebhookUrl, getTeamsWebhookUrl } from '@/lib/config'
-import AppShell from './AppShell'
-import { USERNAME_COOKIE } from './AppShell'
+import AppShell, { USERNAME_COOKIE } from './AppShell'
 
 export const dynamic = 'force-dynamic'
 

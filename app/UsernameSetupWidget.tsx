@@ -52,7 +52,6 @@ export default function UsernameSetupWidget({ onSave }: Props) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           maxLength={80}
-          // biome-ignore lint/a11y/noAutofocus: modal dialog always opens to this field
           autoFocus
         />
         <button
