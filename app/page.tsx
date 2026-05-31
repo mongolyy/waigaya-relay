@@ -1,31 +1,45 @@
 'use client'
 
 import { useState } from 'react'
-import type { PostMessageResponse, RelayResult } from '@/lib/types'
+import type {
+  PostMessageResponse,
+  ReactionsResponse,
+  RelayResult,
+} from '@/lib/types'
 
 const TARGET_LABEL: Record<RelayResult['target'], string> = {
   slack: 'Slack',
   teams: 'Microsoft Teams',
 }
 
-type Status =
+const PRESET_EMOJIS = ['👍', '❤️', '😄', '🎉', '🤔', '👀']
+
+type PostedMessage = {
+  id: string
+  text: string
+  reactions: Record<string, number>
+  ok: boolean
+  results: RelayResult[]
+}
+
+type FormStatus =
   | { kind: 'idle' }
   | { kind: 'sending' }
   | { kind: 'error'; message: string }
-  | { kind: 'done'; ok: boolean; results: RelayResult[] }
 
 export default function Home() {
   const [message, setMessage] = useState('')
-  const [status, setStatus] = useState<Status>({ kind: 'idle' })
+  const [formStatus, setFormStatus] = useState<FormStatus>({ kind: 'idle' })
+  const [postedMessages, setPostedMessages] = useState<PostedMessage[]>([])
 
-  const sending = status.kind === 'sending'
+  const sending = formStatus.kind === 'sending'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const trimmed = message.trim()
     if (!trimmed || sending) return
 
-    setStatus({ kind: 'sending' })
+    setFormStatus({ kind: 'sending' })
 
     try {
       const res = await fetch('/api/messages', {
@@ -39,17 +53,45 @@ export default function Home() {
         | { ok: false; error: string }
 
       if ('error' in data) {
-        setStatus({ kind: 'error', message: data.error })
+        setFormStatus({ kind: 'error', message: data.error })
         return
       }
 
-      setStatus({ kind: 'done', ok: data.ok, results: data.results })
+      setPostedMessages((prev) => [
+        {
+          id: data.messageId,
+          text: trimmed,
+          reactions: {},
+          ok: data.ok,
+          results: data.results,
+        },
+        ...prev,
+      ])
+      setFormStatus({ kind: 'idle' })
       if (data.ok) setMessage('')
     } catch {
-      setStatus({
+      setFormStatus({
         kind: 'error',
         message: 'Failed to send. Please check your network connection.',
       })
+    }
+  }
+
+  async function handleReaction(messageId: string, emoji: string) {
+    try {
+      const res = await fetch('/api/reactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId, emoji }),
+      })
+      const data = (await res.json()) as ReactionsResponse
+      setPostedMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId ? { ...m, reactions: data.reactions } : m,
+        ),
+      )
+    } catch {
+      // reaction failure is non-critical; silently ignore
     }
   }
 
@@ -85,51 +127,66 @@ export default function Home() {
         </button>
       </form>
 
-      <section className="status" aria-live="polite">
-        {status.kind === 'error' && (
+      {formStatus.kind === 'error' && (
+        <section className="status" aria-live="polite">
           <p className="status__banner status__banner--error">
-            ⚠️ {status.message}
+            ⚠️ {formStatus.message}
           </p>
-        )}
+        </section>
+      )}
 
-        {status.kind === 'done' && (
-          <>
-            <p
-              className={`status__banner ${
-                status.ok ? 'status__banner--ok' : 'status__banner--error'
-              }`}
-            >
-              {status.ok
-                ? '✅ Relayed! Start a thread and get the discussion going.'
-                : status.results.every((r) => r.skipped)
-                  ? '⚠️ No relay targets configured. Please check your environment variables.'
-                  : '⚠️ Relay failed. See details below.'}
-            </p>
-            <ul className="status__list">
-              {status.results.map((r) => (
-                <li key={r.target} className="status__item">
-                  <span
-                    className={`status__dot ${
-                      r.skipped
-                        ? 'status__dot--skip'
-                        : r.ok
-                          ? 'status__dot--ok'
-                          : 'status__dot--error'
-                    }`}
-                  />
-                  <span className="status__target">
-                    {TARGET_LABEL[r.target]}
-                  </span>
-                  <span className="status__detail">
-                    {r.skipped ? 'skipped' : r.ok ? 'success' : 'failed'}
-                    {r.detail ? ` — ${r.detail}` : ''}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </section>
+      {postedMessages.length > 0 && (
+        <section className="messages" aria-label="Posted messages">
+          {postedMessages.map((msg) => (
+            <article key={msg.id} className="message">
+              <p className="message__text">{msg.text}</p>
+
+              <ul className="status__list">
+                {msg.results.map((r) => (
+                  <li key={r.target} className="status__item">
+                    <span
+                      className={`status__dot ${
+                        r.skipped
+                          ? 'status__dot--skip'
+                          : r.ok
+                            ? 'status__dot--ok'
+                            : 'status__dot--error'
+                      }`}
+                    />
+                    <span className="status__target">
+                      {TARGET_LABEL[r.target]}
+                    </span>
+                    <span className="status__detail">
+                      {r.skipped ? 'skipped' : r.ok ? 'success' : 'failed'}
+                      {r.detail ? ` — ${r.detail}` : ''}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="reactions">
+                {PRESET_EMOJIS.map((emoji) => {
+                  const count = msg.reactions[emoji] ?? 0
+                  return (
+                    <button
+                      key={emoji}
+                      type="button"
+                      className={`reaction ${count > 0 ? 'reaction--active' : ''}`}
+                      onClick={() => handleReaction(msg.id, emoji)}
+                      aria-label={`React with ${emoji}${count > 0 ? `, ${count}` : ''}`}
+                    >
+                      {emoji}
+                      {count > 0 && (
+                        <span className="reaction__count">{count}</span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
     </main>
   )
 }
