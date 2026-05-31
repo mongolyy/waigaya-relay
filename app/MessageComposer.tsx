@@ -301,7 +301,9 @@ export default function MessageComposer({
         <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm">
           <span className="text-slate-400">
             Posting as{' '}
-            <strong className="text-slate-200">{username || 'Anonymous'}</strong>
+            <strong className="text-slate-200">
+              {username || 'Anonymous'}
+            </strong>
           </span>
           <button
             type="button"
@@ -344,7 +346,10 @@ export default function MessageComposer({
       )}
 
       {postedMessages.length > 0 && (
-        <section className="mt-7 flex flex-col gap-4" aria-label="Posted messages">
+        <section
+          className="mt-7 flex flex-col gap-4"
+          aria-label="Posted messages"
+        >
           <div className="flex justify-end">
             <button
               type="button"

@@ -3,7 +3,9 @@
 body {
   background-color: #0f172a;
   color: #e2e8f0;
-  font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  font-family:
+    system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo,
+    sans-serif;
   line-height: 1.6;
 }
 
