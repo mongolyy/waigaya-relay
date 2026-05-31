@@ -189,63 +189,91 @@ export default function MessageComposer({
   }
 
   return (
-    <main className="app">
-      <header className="app__header">
-        <h1>waigaya-relay 📣</h1>
-        <p className="app__lead">
+    <main className="max-w-xl mx-auto py-12 px-5">
+      <header className="mb-7">
+        <h1 className="m-0 mb-2 text-3xl font-bold">waigaya-relay 📣</h1>
+        <p className="m-0 text-slate-400">
           Post a message and relay it to Slack and Microsoft Teams to spark a
           lively discussion.
         </p>
       </header>
 
-      <details className="guide">
-        <summary className="guide__summary">How to use</summary>
-        <div className="guide__body">
-          <ol className="guide__steps">
+      <details className="mb-5 border border-slate-700 rounded-xl overflow-hidden group">
+        <summary className="px-4 py-3 cursor-pointer font-semibold text-sm text-slate-400 list-none flex items-center gap-2 select-none hover:text-slate-200 [&::-webkit-details-marker]:hidden">
+          <span className="text-[0.7rem] transition-transform duration-200 group-open:rotate-90 inline-block">
+            ▶
+          </span>
+          How to use
+        </summary>
+        <div className="px-5 pt-1 pb-4 border-t border-slate-700 text-sm">
+          <ol className="mt-3 mb-2 pl-5 flex flex-col gap-1 list-decimal">
             <li>
               Enter a message and press <strong>Send</strong>
-              <span className="guide__sub">
+              <span className="block text-[0.85em] text-slate-400 mt-0.5">
                 メッセージを入力して <strong>Send</strong> を押す
               </span>
             </li>
             <li>
               The message is posted simultaneously to all configured
               destinations (Slack and Microsoft Teams)
-              <span className="guide__sub">
+              <span className="block text-[0.85em] text-slate-400 mt-0.5">
                 設定済みの送信先（Slack・Microsoft Teams）に同時に投稿される
               </span>
             </li>
             <li>
               Results are displayed at the bottom of the screen
-              <span className="guide__sub">送信結果は画面下部に表示される</span>
+              <span className="block text-[0.85em] text-slate-400 mt-0.5">
+                送信結果は画面下部に表示される
+              </span>
             </li>
           </ol>
-          <ul className="guide__notes">
+          <ul className="mt-2 pl-5 text-slate-400 flex flex-col gap-1 list-disc">
             <li>
               Maximum 4,000 characters
-              <span className="guide__sub">メッセージは最大 4,000 文字</span>
+              <span className="block text-[0.85em] mt-0.5">
+                メッセージは最大 4,000 文字
+              </span>
             </li>
             <li>
-              Configure Slack via <code>SLACK_BOT_TOKEN</code> /{' '}
-              <code>SLACK_CHANNEL_ID</code> and Teams via{' '}
-              <code>TEAMS_WEBHOOK_URL</code> environment variables
-              <span className="guide__sub">
-                Slack は <code>SLACK_BOT_TOKEN</code> /{' '}
-                <code>SLACK_CHANNEL_ID</code>、Teams は{' '}
-                <code>TEAMS_WEBHOOK_URL</code> で設定
+              Configure Slack via{' '}
+              <code className="bg-slate-900 px-1 py-0.5 rounded text-[0.85em] text-slate-200">
+                SLACK_BOT_TOKEN
+              </code>{' '}
+              /{' '}
+              <code className="bg-slate-900 px-1 py-0.5 rounded text-[0.85em] text-slate-200">
+                SLACK_CHANNEL_ID
+              </code>{' '}
+              and Teams via{' '}
+              <code className="bg-slate-900 px-1 py-0.5 rounded text-[0.85em] text-slate-200">
+                TEAMS_WEBHOOK_URL
+              </code>
+              <span className="block text-[0.85em] mt-0.5">
+                Slack は{' '}
+                <code className="bg-slate-900 px-1 py-0.5 rounded text-[0.85em] text-slate-200">
+                  SLACK_BOT_TOKEN
+                </code>{' '}
+                /{' '}
+                <code className="bg-slate-900 px-1 py-0.5 rounded text-[0.85em] text-slate-200">
+                  SLACK_CHANNEL_ID
+                </code>
+                、Teams は{' '}
+                <code className="bg-slate-900 px-1 py-0.5 rounded text-[0.85em] text-slate-200">
+                  TEAMS_WEBHOOK_URL
+                </code>{' '}
+                で設定
               </span>
             </li>
             <li>
               Each chat-log session posts into its own thread; use{' '}
               <strong>Start new thread</strong> to begin a fresh one
-              <span className="guide__sub">
+              <span className="block text-[0.85em] mt-0.5">
                 セッションごとに別スレッドへ投稿。
                 <strong>Start new thread</strong> で新しいスレッドを開始
               </span>
             </li>
             <li>
               Unconfigured destinations are shown as <em>skipped</em>
-              <span className="guide__sub">
+              <span className="block text-[0.85em] mt-0.5">
                 未設定の送信先は <em>skipped</em> と表示される
               </span>
             </li>
@@ -254,7 +282,10 @@ export default function MessageComposer({
       </details>
 
       {unconfigured.length > 0 && (
-        <div className="status__banner status__banner--warn" role="alert">
+        <div
+          className="mb-3 px-4 py-3 rounded-lg font-semibold bg-yellow-500/15 text-yellow-500"
+          role="alert"
+        >
           ⚠️ {unconfigured.map((t) => TARGET_LABEL[t]).join(' and ')}{' '}
           {unconfigured.length === 1 ? 'is' : 'are'} not configured —{' '}
           {unconfigured.length === Object.keys(configured).length
@@ -263,27 +294,31 @@ export default function MessageComposer({
         </div>
       )}
 
-      <form className="composer" onSubmit={handleSubmit}>
-        <div className="composer__identity">
-          <span className="composer__identity-name">
-            Posting as <strong>{username || 'Anonymous'}</strong>
+      <form
+        className="flex flex-col gap-3 bg-slate-800 p-5 rounded-xl"
+        onSubmit={handleSubmit}
+      >
+        <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm">
+          <span className="text-slate-400">
+            Posting as{' '}
+            <strong className="text-slate-200">{username || 'Anonymous'}</strong>
           </span>
           <button
             type="button"
-            className="composer__identity-change"
+            className="flex flex-col items-end border-0 bg-transparent text-indigo-400 text-[0.8rem] cursor-pointer p-0 whitespace-nowrap transition-colors duration-150 hover:text-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={onChangeUsername}
             disabled={sending}
           >
             Change name
-            <span className="composer__identity-change-sub">名前を変更</span>
+            <span className="text-[0.7rem] text-slate-400">名前を変更</span>
           </button>
         </div>
-        <label className="composer__label" htmlFor="message">
+        <label className="font-semibold text-sm" htmlFor="message">
           Message
         </label>
         <textarea
           id="message"
-          className="composer__input"
+          className="w-full resize-y p-3 rounded-lg border border-slate-700 bg-slate-900 text-slate-200 font-[inherit] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           rows={4}
           placeholder="Write something to get the conversation started…"
           value={message}
@@ -293,7 +328,7 @@ export default function MessageComposer({
         />
         <button
           type="submit"
-          className="composer__submit"
+          className="self-end px-5 py-2.5 border-0 rounded-lg bg-indigo-500 text-white font-semibold cursor-pointer transition-colors hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={sending || message.trim().length === 0}
         >
           {sending ? 'Sending…' : 'Send'}
@@ -301,48 +336,58 @@ export default function MessageComposer({
       </form>
 
       {formStatus.kind === 'error' && (
-        <section className="status" aria-live="polite">
-          <p className="status__banner status__banner--error">
+        <section className="mt-6" aria-live="polite">
+          <p className="m-0 mb-3 px-4 py-3 rounded-lg font-semibold bg-red-500/15 text-red-500">
             ⚠️ {formStatus.message}
           </p>
         </section>
       )}
 
       {postedMessages.length > 0 && (
-        <section className="messages" aria-label="Posted messages">
-          <div className="messages__toolbar">
+        <section className="mt-7 flex flex-col gap-4" aria-label="Posted messages">
+          <div className="flex justify-end">
             <button
               type="button"
-              className="messages__new-thread"
+              className="inline-flex flex-col items-center gap-0.5 px-3.5 py-1.5 rounded-lg border border-slate-700 bg-transparent text-slate-200 text-sm cursor-pointer hover:bg-slate-800 transition-colors"
               onClick={handleNewThread}
             >
               Start new thread
-              <span className="messages__new-thread-sub">新しいスレッド</span>
+              <span className="text-[0.72rem] text-slate-400">
+                新しいスレッド
+              </span>
             </button>
           </div>
           {postedMessages.map((msg) => (
-            <article key={msg.id} className="message">
+            <article
+              key={msg.id}
+              className="bg-slate-800 rounded-xl px-5 py-4 flex flex-col gap-3"
+            >
               {msg.username && (
-                <p className="message__author">{msg.username}</p>
+                <p className="m-0 text-xs font-semibold text-indigo-400">
+                  {msg.username}
+                </p>
               )}
-              <p className="message__text">{msg.text}</p>
+              <p className="m-0 whitespace-pre-wrap break-words">{msg.text}</p>
 
-              <ul className="status__list">
+              <ul className="list-none m-0 p-0 flex flex-col gap-2">
                 {msg.results.map((r) => (
-                  <li key={r.target} className="status__item">
+                  <li
+                    key={r.target}
+                    className="flex items-baseline gap-2.5 bg-slate-700/50 px-3.5 py-2.5 rounded-lg"
+                  >
                     <span
-                      className={`status__dot ${
+                      className={`size-2.5 rounded-full shrink-0 translate-y-px ${
                         r.skipped
-                          ? 'status__dot--skip'
+                          ? 'bg-slate-400'
                           : r.ok
-                            ? 'status__dot--ok'
-                            : 'status__dot--error'
+                            ? 'bg-green-500'
+                            : 'bg-red-500'
                       }`}
                     />
-                    <span className="status__target">
+                    <span className="font-semibold min-w-[7em]">
                       {TARGET_LABEL[r.target]}
                     </span>
-                    <span className="status__detail">
+                    <span className="text-slate-400 text-sm">
                       {r.skipped
                         ? 'skipped (not configured)'
                         : r.ok
@@ -354,7 +399,7 @@ export default function MessageComposer({
                 ))}
               </ul>
 
-              <div className="reactions">
+              <div className="flex flex-wrap gap-1.5">
                 {PRESET_EMOJIS.map((emoji) => {
                   const count = msg.reactions[emoji] ?? 0
                   const reacted = msg.userReacted.has(emoji)
@@ -362,13 +407,21 @@ export default function MessageComposer({
                     <button
                       key={emoji}
                       type="button"
-                      className={`reaction ${reacted ? 'reaction--reacted' : count > 0 ? 'reaction--active' : ''}`}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-slate-200 cursor-pointer text-base transition-all duration-150 hover:bg-indigo-500/15 hover:border-indigo-500 ${
+                        reacted
+                          ? 'bg-indigo-500/30 border-indigo-500'
+                          : count > 0
+                            ? 'bg-indigo-500/20 border-indigo-500'
+                            : 'bg-transparent border-slate-700'
+                      }`}
                       onClick={() => handleReaction(msg.id, emoji)}
                       aria-label={`${reacted ? 'Remove reaction' : 'React with'} ${emoji}${count > 0 ? `, ${count}` : ''}`}
                     >
                       {emoji}
                       {count > 0 && (
-                        <span className="reaction__count">{count}</span>
+                        <span className="text-[0.85rem] font-semibold text-indigo-400">
+                          {count}
+                        </span>
                       )}
                     </button>
                   )
