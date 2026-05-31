@@ -31,7 +31,7 @@ export async function postToSlack(
     if (!res.ok) {
       const rawBody = await res.text().catch(() => '')
       const body =
-        rawBody.length > 200 ? rawBody.substring(0, 200) + '...' : rawBody
+        rawBody.length > 200 ? `${rawBody.substring(0, 200)}...` : rawBody
       return {
         target: 'slack',
         ok: false,

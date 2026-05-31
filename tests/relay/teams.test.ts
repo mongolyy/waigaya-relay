@@ -36,11 +36,11 @@ describe('postToTeams', () => {
 
     const [url, options] = vi.mocked(fetch).mock.calls[0]
     expect(url).toBe(WEBHOOK_URL)
-    const payload = JSON.parse(options!.body as string)
+    const payload = JSON.parse(options?.body as string)
     expect(payload['@type']).toBe('MessageCard')
     expect(payload['@context']).toBe('https://schema.org/extensions')
     expect(payload.text).toBe('test message')
-    expect((options!.headers as Record<string, string>)['Content-Type']).toBe(
+    expect((options?.headers as Record<string, string>)['Content-Type']).toBe(
       'application/json',
     )
   })
@@ -71,7 +71,7 @@ describe('postToTeams', () => {
     )
     const result = await postToTeams(WEBHOOK_URL, 'hello')
     expect(result.detail).toContain('...')
-    const bodyPart = result.detail!.split(': ')[1]
+    const bodyPart = result.detail?.split(': ')[1]
     expect(bodyPart.length).toBeLessThanOrEqual(203)
   })
 
