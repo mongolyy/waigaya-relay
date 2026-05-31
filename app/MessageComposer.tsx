@@ -15,6 +15,27 @@ const TARGET_LABEL: Record<RelayTarget, string> = {
 
 const PRESET_EMOJIS = ['👍', '❤️', '😄', '🎉', '🤔', '👀']
 
+/** sessionStorage key holding the current chat-log session id. */
+const SESSION_KEY = 'waigaya-relay:sessionId'
+
+/**
+ * Return the current session id, generating and persisting one on first use.
+ * All messages sent with the same id are grouped into a single thread.
+ */
+function getSessionId(): string {
+  let id = window.sessionStorage.getItem(SESSION_KEY)
+  if (!id) {
+    id = crypto.randomUUID()
+    window.sessionStorage.setItem(SESSION_KEY, id)
+  }
+  return id
+}
+
+/** Start a fresh session so subsequent messages open a new thread. */
+function resetSessionId(): void {
+  window.sessionStorage.setItem(SESSION_KEY, crypto.randomUUID())
+}
+
 type FormStatus =
   | { kind: 'idle' }
   | { kind: 'sending' }
@@ -55,7 +76,7 @@ export default function MessageComposer({ configured }: Props) {
       const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({ message: trimmed, sessionId: getSessionId() }),
       })
 
       const data = (await res.json()) as
@@ -96,6 +117,12 @@ export default function MessageComposer({ configured }: Props) {
         message: 'Failed to send. Please check your network connection.',
       })
     }
+  }
+
+  function handleNewThread() {
+    resetSessionId()
+    setPostedMessages([])
+    setFormStatus({ kind: 'idle' })
   }
 
   async function handleReaction(messageId: string, emoji: string) {
@@ -165,11 +192,21 @@ export default function MessageComposer({ configured }: Props) {
               <span className="guide__sub">メッセージは最大 4,000 文字</span>
             </li>
             <li>
-              Configure destinations via <code>SLACK_WEBHOOK_URL</code> /{' '}
+              Configure Slack via <code>SLACK_BOT_TOKEN</code> /{' '}
+              <code>SLACK_CHANNEL_ID</code> and Teams via{' '}
               <code>TEAMS_WEBHOOK_URL</code> environment variables
               <span className="guide__sub">
-                送信先は環境変数 <code>SLACK_WEBHOOK_URL</code> /{' '}
+                Slack は <code>SLACK_BOT_TOKEN</code> /{' '}
+                <code>SLACK_CHANNEL_ID</code>、Teams は{' '}
                 <code>TEAMS_WEBHOOK_URL</code> で設定
+              </span>
+            </li>
+            <li>
+              Each chat-log session posts into its own thread; use{' '}
+              <strong>Start new thread</strong> to begin a fresh one
+              <span className="guide__sub">
+                セッションごとに別スレッドへ投稿。
+                <strong>Start new thread</strong> で新しいスレッドを開始
               </span>
             </li>
             <li>
@@ -225,6 +262,16 @@ export default function MessageComposer({ configured }: Props) {
 
       {postedMessages.length > 0 && (
         <section className="messages" aria-label="Posted messages">
+          <div className="messages__toolbar">
+            <button
+              type="button"
+              className="messages__new-thread"
+              onClick={handleNewThread}
+            >
+              Start new thread
+              <span className="messages__new-thread-sub">新しいスレッド</span>
+            </button>
+          </div>
           {postedMessages.map((msg) => (
             <article key={msg.id} className="message">
               <p className="message__text">{msg.text}</p>
