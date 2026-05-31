@@ -76,15 +76,29 @@ If no destination is configured, every relay is skipped and the API responds `ok
 
 **waigaya-relay** is a Next.js (App Router) app that accepts a chat message from a web UI and relays it to Slack (via the Web API `chat.postMessage`) and/or Microsoft Teams (via an Incoming Webhook). Each chat-log **session** posts into its own Slack thread: the first message starts a thread and its `ts` is stored per session, so subsequent messages reply into the same thread. Dependency versions are managed in `package.json` (currently Next.js 16 / React 19).
 
+### Layer structure
+
+The codebase is organized into four layers. Each layer may only depend on layers below it.
+
+| Layer | Location | Responsibility |
+|---|---|---|
+| Presentation | `app/` | Next.js pages, client components, UI logic |
+| API Handler | `app/api/**/route.ts` | HTTP request parsing and response mapping only — no business logic |
+| Use Case | `lib/usecase/` | Input validation, business rules, orchestration of infrastructure calls |
+| Infrastructure | `lib/relay/`, `lib/store.ts`, `lib/session-store.ts`, `lib/config.ts` | External services, persistence, environment configuration |
+
+When adding new behaviour: put validation and orchestration in `lib/usecase/`, keep route handlers thin (JSON parse → usecase call → HTTP response), and put all outbound I/O in the infrastructure files.
+
 ### Request flow
 
 ```
 Browser (app/page.tsx → MessageComposer.tsx, sends { message, sessionId })
-  → POST /api/messages   (app/api/messages/route.ts)
-      → getSessionThread(sessionId)            (lib/session-store.ts)
-      → postToSlack({token,channel}, msg, ts?) (lib/relay/slack.ts)  ─┐ Promise.all
-      → postToTeams(webhookUrl, msg)           (lib/relay/teams.ts)  ─┘
-      → saveSessionThread(sessionId, { slackThreadTs }) on first post
+  → POST /api/messages        (app/api/messages/route.ts)
+      → relayMessage()        (lib/usecase/relayMessage.ts)
+          → getSessionThread(sessionId)            (lib/session-store.ts)
+          → postToSlack({token,channel}, msg, ts?) (lib/relay/slack.ts)  ─┐ Promise.all
+          → postToTeams(webhookUrl, msg)           (lib/relay/teams.ts)  ─┘
+          → saveSessionThread(sessionId, { slackThreadTs }) on first post
   ← { ok, results[], messageId }
 ```
 
@@ -93,7 +107,10 @@ Browser (app/page.tsx → MessageComposer.tsx, sends { message, sessionId })
 - **`lib/relay/slack.ts`** — posts to Slack `chat.postMessage` with a bearer token; threads via `thread_ts`; returns the message `ts`
 - **`lib/relay/teams.ts`** — posts `MessageCard` format JSON to the Teams webhook (no threading)
 - **`lib/session-store.ts`** — maps `sessionId → { slackThreadTs }`; Upstash Redis (REST) when configured, else in-memory Map
-- **`app/api/messages/route.ts`** — validates input, resolves the session thread, fans out to both relays, persists the thread anchor, assembles response
+- **`lib/usecase/relayMessage.ts`** — validates message/username/sessionId, orchestrates session lookup, parallel relay calls, thread anchor persistence, and assembles the response
+- **`lib/usecase/reaction.ts`** — validates emoji and messageId, delegates to the store; shared `validateReaction` helper eliminates duplication between add and remove
+- **`app/api/messages/route.ts`** — parses JSON body, calls `relayMessage`, maps result to HTTP response
+- **`app/api/reactions/route.ts`** — parses JSON body / query params, calls reaction use cases, maps results to HTTP responses
 - **`app/MessageComposer.tsx`** — client component; generates/persists `sessionId` in `sessionStorage`, sends it with each message, and offers a **Start new thread** button
 
 ### Key design decisions
