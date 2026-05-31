@@ -47,7 +47,7 @@ The UI uses **Tailwind CSS v4** with the `@tailwindcss/postcss` plugin. All styl
 | Success | `green-500` | `#22c55e` |
 | Error | `red-500` | `#ef4444` |
 
-`app/globals.css` is intentionally minimal — it only sets `body` base styles (background, text color, font-family, line-height) and the `dialog::backdrop` rule, both of which cannot be expressed as element-level utility classes.
+`app/globals.css` is intentionally minimal — it only sets `body` base styles (background, text color, font-family, line-height) and the `dialog::backdrop` rule. These could technically be expressed as Tailwind utility classes, but keeping them in a single CSS file is simpler and avoids scattering global base styles across multiple component files.
 
 ---
 
