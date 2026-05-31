@@ -51,7 +51,12 @@ export default function MessageComposer({ configured }: Props) {
       }
 
       const allSkipped = data.results.every((r) => r.skipped)
-      setStatus({ kind: 'done', ok: data.ok, allSkipped, results: data.results })
+      setStatus({
+        kind: 'done',
+        ok: data.ok,
+        allSkipped,
+        results: data.results,
+      })
       if (data.ok || allSkipped) setMessage('')
     } catch {
       setStatus({
@@ -188,7 +193,11 @@ export default function MessageComposer({ configured }: Props) {
                     {TARGET_LABEL[r.target]}
                   </span>
                   <span className="status__detail">
-                    {r.skipped ? 'skipped (not configured)' : r.ok ? 'success' : 'failed'}
+                    {r.skipped
+                      ? 'skipped (not configured)'
+                      : r.ok
+                        ? 'success'
+                        : 'failed'}
                     {r.detail && !r.skipped ? ` — ${r.detail}` : ''}
                   </span>
                 </li>
