@@ -24,6 +24,10 @@ When new changes are pushed to a PR branch, update the PR title and description 
 
 When subscribed to PR activity, always reply to every review comment — including bot comments (e.g., Gemini, CodeRabbit). Acknowledge the finding and briefly explain the decision taken (accepted, rejected with reason, or no action needed).
 
+After addressing a review comment, do NOT resolve the conversation. Instead, mention the reviewer (e.g., @username, unless they are a bot) in your reply so they are notified. The reviewer decides the next step:
+- If satisfied → reviewer resolves the conversation themselves.
+- If not satisfied → reviewer mentions `@claude` and asks a follow-up question.
+
 ## Documentation
 
 - `README.md` — English user-facing documentation
