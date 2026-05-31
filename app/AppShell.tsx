@@ -17,15 +17,6 @@ function setUsernameCookie(value: string) {
   }
 }
 
-function clearUsernameCookie() {
-  try {
-    // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API is not yet universally available
-    document.cookie = `${USERNAME_COOKIE}=; max-age=0; path=/`
-  } catch {
-    // cookies may be unavailable in restricted contexts
-  }
-}
-
 interface Props {
   initialUsername: string
   configured: Record<RelayTarget, boolean>
@@ -33,20 +24,31 @@ interface Props {
 
 export default function AppShell({ initialUsername, configured }: Props) {
   const [username, setUsername] = useState(initialUsername)
+  const [showWidget, setShowWidget] = useState(!initialUsername)
 
   function handleSaveUsername(name: string) {
     setUsernameCookie(name)
     setUsername(name)
+    setShowWidget(false)
   }
 
   function handleChangeUsername() {
-    clearUsernameCookie()
-    setUsername('')
+    setShowWidget(true)
+  }
+
+  function handleCancelChange() {
+    setShowWidget(false)
   }
 
   return (
     <>
-      {!username && <UsernameSetupWidget onSave={handleSaveUsername} />}
+      {showWidget && (
+        <UsernameSetupWidget
+          isChanging={!!username}
+          onSave={handleSaveUsername}
+          onCancel={handleCancelChange}
+        />
+      )}
       <MessageComposer
         configured={configured}
         username={username}
