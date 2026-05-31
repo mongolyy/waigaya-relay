@@ -63,6 +63,22 @@ export default function Home() {
         </p>
       </header>
 
+      <details className="guide">
+        <summary className="guide__summary">使い方 / How to use</summary>
+        <div className="guide__body">
+          <ol className="guide__steps">
+            <li>メッセージを入力して <strong>Send</strong> を押す</li>
+            <li>設定済みの送信先（Slack・Microsoft Teams）に同時に投稿される</li>
+            <li>送信結果は画面下部に表示される</li>
+          </ol>
+          <ul className="guide__notes">
+            <li>メッセージは最大 4,000 文字</li>
+            <li>送信先は環境変数 <code>SLACK_WEBHOOK_URL</code> / <code>TEAMS_WEBHOOK_URL</code> で設定</li>
+            <li>未設定の送信先は <em>skipped</em> と表示される</li>
+          </ul>
+        </div>
+      </details>
+
       <form className="composer" onSubmit={handleSubmit}>
         <label className="composer__label" htmlFor="message">
           Message
