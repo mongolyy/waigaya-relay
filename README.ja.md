@@ -101,7 +101,7 @@ UI には **Tailwind CSS v4**（`@tailwindcss/postcss` プラグイン）を使�
 ### 2. 依存パッケージのインストール
 
 ```bash
-npm install
+npm ci
 ```
 
 ### 3. 環境変数の設定
