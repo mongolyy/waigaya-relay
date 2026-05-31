@@ -2,6 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Language Policy
+
+This project uses **English** as the primary language. Use English for:
+
+- Code, comments, and variable/function names
+- Commit messages and PR titles/descriptions
+- GitHub Actions workflow names and job names
+- User-facing UI text
+- All documentation except the files listed below
+
+**Exception**: `README.ja.md` and any other `.ja.md` files are intentionally written in Japanese and should remain so.
+
 ## Documentation
 
 - `README.md` — English user-facing documentation
