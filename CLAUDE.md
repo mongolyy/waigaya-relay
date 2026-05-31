@@ -2,6 +2,32 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Language Policy
+
+This project uses **English** as the primary language. Use English for:
+
+- Code, comments, and variable/function names
+- Commit messages and PR titles/descriptions
+- GitHub Actions workflow names and job names
+- User-facing UI text
+- All documentation except the files listed below
+
+**Exception**: `README.ja.md` and any other `.ja.md` files are intentionally written in Japanese and should remain so.
+
+**Exception**: Bilingual UI components (English primary, Japanese subtitle) are permitted where the target audience is Japanese speakers. In such cases, English must be the primary/larger text and Japanese may appear as smaller supplementary text.
+
+## Pull Request Management
+
+When new changes are pushed to a PR branch, update the PR title and description to reflect the current state of all changes on the branch.
+
+## Pull Request Review Comments
+
+When subscribed to PR activity, always reply to every review comment — including bot comments (e.g., Gemini, CodeRabbit). Acknowledge the finding and briefly explain the decision taken (accepted, rejected with reason, or no action needed).
+
+After addressing a review comment, do NOT resolve the conversation. Instead, mention the reviewer (e.g., @username, unless they are a bot) in your reply so they are notified. The reviewer decides the next step:
+- If satisfied → reviewer resolves the conversation themselves.
+- If not satisfied → reviewer mentions `@claude` and asks a follow-up question.
+
 ## Documentation
 
 - `README.md` — English user-facing documentation
