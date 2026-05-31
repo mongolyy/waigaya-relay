@@ -84,6 +84,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messageId, emoji }),
       })
+      if (!res.ok) return
       const data = (await res.json()) as ReactionsResponse
       setPostedMessages((prev) =>
         prev.map((m) =>

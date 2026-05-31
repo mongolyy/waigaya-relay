@@ -7,6 +7,10 @@ export interface StoredMessage {
 
 const messages = new Map<string, StoredMessage>()
 
+export function clearStore(): void {
+  messages.clear()
+}
+
 export function createMessage(id: string, text: string): StoredMessage {
   const msg: StoredMessage = { id, text, reactions: {} }
   messages.set(id, msg)

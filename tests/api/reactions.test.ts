@@ -1,14 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-// Reset the store module between tests so reactions don't leak across test cases.
-vi.mock('@/lib/store', async () => {
-  const actual =
-    await vi.importActual<typeof import('@/lib/store')>('@/lib/store')
-  return actual
-})
-
+import { beforeEach, describe, expect, it } from 'vitest'
 import { GET, POST } from '@/app/api/reactions/route'
-import { createMessage } from '@/lib/store'
+import { clearStore, createMessage } from '@/lib/store'
+
+beforeEach(() => {
+  clearStore()
+})
 
 function makeGetRequest(messageId: string): Request {
   return new Request(`http://localhost/api/reactions?messageId=${messageId}`, {
@@ -60,8 +56,18 @@ describe('POST /api/reactions', () => {
     expect(res.status).toBe(400)
   })
 
+  it('returns 400 when body is null', async () => {
+    const res = await POST(makePostRequest(null))
+    expect(res.status).toBe(400)
+  })
+
   it('returns 400 when messageId or emoji is missing', async () => {
     const res = await POST(makePostRequest({ messageId: 'msg-2' }))
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 for an unsupported emoji', async () => {
+    const res = await POST(makePostRequest({ messageId: 'msg-2', emoji: '🦄' }))
     expect(res.status).toBe(400)
   })
 
