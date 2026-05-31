@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
+import type { AddReactionRequest } from '@/lib/types'
 import {
   addReaction,
   getReactions,
   removeReaction,
 } from '@/lib/usecase/reaction'
-import type { AddReactionRequest } from '@/lib/types'
 
 export const runtime = 'nodejs'
 
@@ -13,10 +13,16 @@ export async function GET(request: Request): Promise<NextResponse> {
   const result = getReactions(searchParams.get('messageId'))
 
   if (result.kind === 'validation_error') {
-    return NextResponse.json({ ok: false, error: result.error }, { status: 400 })
+    return NextResponse.json(
+      { ok: false, error: result.error },
+      { status: 400 },
+    )
   }
   if (result.kind === 'not_found') {
-    return NextResponse.json({ ok: false, error: result.error }, { status: 404 })
+    return NextResponse.json(
+      { ok: false, error: result.error },
+      { status: 404 },
+    )
   }
   return NextResponse.json({ reactions: result.reactions })
 }
@@ -43,10 +49,16 @@ export async function POST(request: Request): Promise<NextResponse> {
   const result = addReaction(messageId, emoji)
 
   if (result.kind === 'validation_error') {
-    return NextResponse.json({ ok: false, error: result.error }, { status: 400 })
+    return NextResponse.json(
+      { ok: false, error: result.error },
+      { status: 400 },
+    )
   }
   if (result.kind === 'not_found') {
-    return NextResponse.json({ ok: false, error: result.error }, { status: 404 })
+    return NextResponse.json(
+      { ok: false, error: result.error },
+      { status: 404 },
+    )
   }
   return NextResponse.json({ reactions: result.reactions })
 }
@@ -73,10 +85,16 @@ export async function DELETE(request: Request): Promise<NextResponse> {
   const result = removeReaction(messageId, emoji)
 
   if (result.kind === 'validation_error') {
-    return NextResponse.json({ ok: false, error: result.error }, { status: 400 })
+    return NextResponse.json(
+      { ok: false, error: result.error },
+      { status: 400 },
+    )
   }
   if (result.kind === 'not_found') {
-    return NextResponse.json({ ok: false, error: result.error }, { status: 404 })
+    return NextResponse.json(
+      { ok: false, error: result.error },
+      { status: 404 },
+    )
   }
   return NextResponse.json({ reactions: result.reactions })
 }
