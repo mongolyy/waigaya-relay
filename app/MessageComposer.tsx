@@ -23,6 +23,7 @@ type FormStatus =
 type PostedMessage = {
   id: string
   text: string
+  username: string
   reactions: Record<string, number>
   userReacted: Set<string>
   ok: boolean
@@ -89,6 +90,7 @@ export default function MessageComposer({
         {
           id: data.messageId,
           text: trimmed,
+          username,
           reactions: {},
           userReacted: new Set(),
           ok: data.ok,
@@ -250,6 +252,9 @@ export default function MessageComposer({
         <section className="messages" aria-label="Posted messages">
           {postedMessages.map((msg) => (
             <article key={msg.id} className="message">
+              {msg.username && (
+                <p className="message__author">{msg.username}</p>
+              )}
               <p className="message__text">{msg.text}</p>
 
               <ul className="status__list">

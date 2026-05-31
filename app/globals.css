@@ -313,6 +313,13 @@ details[open] .guide__summary::before {
   gap: 12px;
 }
 
+.message__author {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
 .message__text {
   margin: 0;
   white-space: pre-wrap;
