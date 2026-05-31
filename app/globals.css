@@ -45,6 +45,82 @@ body {
   color: var(--muted);
 }
 
+.guide {
+  margin-bottom: 20px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.guide__summary {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--muted);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+
+.guide__summary::-webkit-details-marker {
+  display: none;
+}
+
+.guide__summary::before {
+  content: "▶";
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+}
+
+details[open] .guide__summary::before {
+  transform: rotate(90deg);
+}
+
+.guide__summary:hover {
+  color: var(--text);
+}
+
+.guide__body {
+  padding: 4px 20px 16px;
+  border-top: 1px solid #334155;
+  font-size: 0.9rem;
+}
+
+.guide__steps {
+  margin: 12px 0 8px;
+  padding-left: 1.4em;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guide__notes {
+  margin: 8px 0 0;
+  padding-left: 1.4em;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guide__sub {
+  display: block;
+  font-size: 0.85em;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.guide__notes code {
+  background: var(--bg);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  color: var(--text);
+}
+
 .composer {
   display: flex;
   flex-direction: column;

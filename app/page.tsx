@@ -63,6 +63,51 @@ export default function Home() {
         </p>
       </header>
 
+      <details className="guide">
+        <summary className="guide__summary">How to use</summary>
+        <div className="guide__body">
+          <ol className="guide__steps">
+            <li>
+              Enter a message and press <strong>Send</strong>
+              <span className="guide__sub">
+                メッセージを入力して <strong>Send</strong> を押す
+              </span>
+            </li>
+            <li>
+              The message is posted simultaneously to all configured
+              destinations (Slack and Microsoft Teams)
+              <span className="guide__sub">
+                設定済みの送信先（Slack・Microsoft Teams）に同時に投稿される
+              </span>
+            </li>
+            <li>
+              Results are displayed at the bottom of the screen
+              <span className="guide__sub">送信結果は画面下部に表示される</span>
+            </li>
+          </ol>
+          <ul className="guide__notes">
+            <li>
+              Maximum 4,000 characters
+              <span className="guide__sub">メッセージは最大 4,000 文字</span>
+            </li>
+            <li>
+              Configure destinations via <code>SLACK_WEBHOOK_URL</code> /{' '}
+              <code>TEAMS_WEBHOOK_URL</code> environment variables
+              <span className="guide__sub">
+                送信先は環境変数 <code>SLACK_WEBHOOK_URL</code> /{' '}
+                <code>TEAMS_WEBHOOK_URL</code> で設定
+              </span>
+            </li>
+            <li>
+              Unconfigured destinations are shown as <em>skipped</em>
+              <span className="guide__sub">
+                未設定の送信先は <em>skipped</em> と表示される
+              </span>
+            </li>
+          </ul>
+        </div>
+      </details>
+
       <form className="composer" onSubmit={handleSubmit}>
         <label className="composer__label" htmlFor="message">
           Message
