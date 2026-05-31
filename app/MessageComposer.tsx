@@ -19,21 +19,43 @@ const PRESET_EMOJIS = ['👍', '❤️', '😄', '🎉', '🤔', '👀']
 const SESSION_KEY = 'waigaya-relay:sessionId'
 
 /**
+ * In-memory fallback used when sessionStorage is unavailable (e.g. private
+ * browsing or blocked storage). Threading still works within the page lifetime.
+ */
+let fallbackSessionId: string | null = null
+
+/**
  * Return the current session id, generating and persisting one on first use.
  * All messages sent with the same id are grouped into a single thread.
  */
 function getSessionId(): string {
-  let id = window.sessionStorage.getItem(SESSION_KEY)
+  let id: string | null = null
+  try {
+    id = window.sessionStorage.getItem(SESSION_KEY)
+  } catch {
+    // sessionStorage unavailable — fall back to the in-memory id.
+  }
   if (!id) {
-    id = crypto.randomUUID()
-    window.sessionStorage.setItem(SESSION_KEY, id)
+    id = fallbackSessionId ?? crypto.randomUUID()
+    try {
+      window.sessionStorage.setItem(SESSION_KEY, id)
+    } catch {
+      // sessionStorage unavailable — keep the id in memory only.
+    }
+    fallbackSessionId = id
   }
   return id
 }
 
 /** Start a fresh session so subsequent messages open a new thread. */
 function resetSessionId(): void {
-  window.sessionStorage.setItem(SESSION_KEY, crypto.randomUUID())
+  const newId = crypto.randomUUID()
+  try {
+    window.sessionStorage.setItem(SESSION_KEY, newId)
+  } catch {
+    // sessionStorage unavailable — keep the id in memory only.
+  }
+  fallbackSessionId = newId
 }
 
 type FormStatus =

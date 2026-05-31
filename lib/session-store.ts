@@ -60,12 +60,17 @@ export async function getSessionThread(
   if (!config) {
     return memory.get(keyFor(sessionId)) ?? null
   }
-  const result = await upstashCommand(config, ['GET', keyFor(sessionId)])
-  if (typeof result !== 'string') return null
   try {
+    const result = await upstashCommand(config, ['GET', keyFor(sessionId)])
+    if (typeof result !== 'string') return null
     return JSON.parse(result) as SessionThread
-  } catch {
-    return null
+  } catch (err) {
+    // A Redis outage must not break the relay; degrade to the in-memory store.
+    console.error(
+      'Upstash getSessionThread failed; falling back to memory.',
+      err,
+    )
+    return memory.get(keyFor(sessionId)) ?? null
   }
 }
 
@@ -79,13 +84,22 @@ export async function saveSessionThread(
     memory.set(keyFor(sessionId), thread)
     return
   }
-  await upstashCommand(config, [
-    'SET',
-    keyFor(sessionId),
-    JSON.stringify(thread),
-    'EX',
-    TTL_SECONDS,
-  ])
+  try {
+    await upstashCommand(config, [
+      'SET',
+      keyFor(sessionId),
+      JSON.stringify(thread),
+      'EX',
+      TTL_SECONDS,
+    ])
+  } catch (err) {
+    // A Redis outage must not break the relay; degrade to the in-memory store.
+    console.error(
+      'Upstash saveSessionThread failed; falling back to memory.',
+      err,
+    )
+    memory.set(keyFor(sessionId), thread)
+  }
 }
 
 /** Test helper: clears the in-memory fallback store. */
