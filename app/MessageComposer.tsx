@@ -49,16 +49,20 @@ type FloatingEmoji = { id: string; emoji: string; msgId: string }
 /** sessionStorage key holding the current conversation code. */
 const SESSION_KEY = 'waigaya-relay:sessionId'
 
+const CODE_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
+const CODE_LENGTH = 12
+const CODE_PATTERN = /^[a-z0-9]{12}$/
+
+let fallbackCode: string | null = null
+
 function saveCode(code: string): void {
   try {
     window.sessionStorage.setItem(SESSION_KEY, code)
   } catch {
     // sessionStorage unavailable — code lives only in component state.
   }
+  fallbackCode = code
 }
-
-const CODE_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
-const CODE_LENGTH = 12
 
 function generateCode(): string {
   const bytes = new Uint8Array(CODE_LENGTH)
@@ -67,16 +71,17 @@ function generateCode(): string {
 }
 
 function loadOrCreateCode(initialCode?: string): string {
-  if (initialCode) {
+  if (initialCode && CODE_PATTERN.test(initialCode)) {
     saveCode(initialCode)
     return initialCode
   }
   try {
     const stored = window.sessionStorage.getItem(SESSION_KEY)
-    if (stored) return stored
+    if (stored && CODE_PATTERN.test(stored)) return stored
   } catch {
     // sessionStorage unavailable
   }
+  if (fallbackCode) return fallbackCode
   const newCode = generateCode()
   saveCode(newCode)
   return newCode
@@ -200,6 +205,14 @@ export default function MessageComposer({
     e.preventDefault()
     const code = joinInput.trim()
     if (!code) return
+    if (!CODE_PATTERN.test(code)) {
+      setFormStatus({
+        kind: 'error',
+        message:
+          'Invalid conversation code. It must be 12 lowercase alphanumeric characters.',
+      })
+      return
+    }
     saveCode(code)
     setConversationCode(code)
     setJoinInput('')
@@ -390,7 +403,9 @@ export default function MessageComposer({
             <div className="flex flex-col gap-0.5 min-w-0">
               <span className="text-slate-400 text-xs">
                 Conversation code
-                <span className="ml-1.5 text-slate-500">会話コード</span>
+                <span className="ml-1.5 text-[0.7rem] text-slate-500">
+                  会話コード
+                </span>
               </span>
               <code className="font-mono text-slate-200 truncate">
                 {conversationCode}
