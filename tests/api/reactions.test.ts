@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { GET, POST } from '@/app/api/reactions/route'
+import { DELETE, GET, POST } from '@/app/api/reactions/route'
 import { clearStore, createMessage } from '@/lib/store'
 
 beforeEach(() => {
@@ -99,5 +99,58 @@ describe('POST /api/reactions', () => {
     const data = await res.json()
     expect(data.reactions['👍']).toBe(1)
     expect(data.reactions['😄']).toBe(1)
+  })
+})
+
+describe('DELETE /api/reactions', () => {
+  beforeEach(() => {
+    createMessage('msg-3', 'test message')
+  })
+
+  function makeDeleteRequest(body: unknown): Request {
+    return new Request('http://localhost/api/reactions', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+  }
+
+  it('returns 400 when body is null', async () => {
+    const res = await DELETE(makeDeleteRequest(null))
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 for an unsupported emoji', async () => {
+    const res = await DELETE(
+      makeDeleteRequest({ messageId: 'msg-3', emoji: '🦄' }),
+    )
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 404 for an unknown messageId', async () => {
+    const res = await DELETE(
+      makeDeleteRequest({ messageId: 'no-such-id', emoji: '👍' }),
+    )
+    expect(res.status).toBe(404)
+  })
+
+  it('decrements reaction count', async () => {
+    await POST(makePostRequest({ messageId: 'msg-3', emoji: '👍' }))
+    await POST(makePostRequest({ messageId: 'msg-3', emoji: '👍' }))
+    const res = await DELETE(
+      makeDeleteRequest({ messageId: 'msg-3', emoji: '👍' }),
+    )
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.reactions['👍']).toBe(1)
+  })
+
+  it('removes the emoji key when count reaches zero', async () => {
+    await POST(makePostRequest({ messageId: 'msg-3', emoji: '👍' }))
+    const res = await DELETE(
+      makeDeleteRequest({ messageId: 'msg-3', emoji: '👍' }),
+    )
+    const data = await res.json()
+    expect(data.reactions['👍']).toBeUndefined()
   })
 })

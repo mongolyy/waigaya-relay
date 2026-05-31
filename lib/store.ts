@@ -27,6 +27,21 @@ export function addReaction(
   return msg
 }
 
+export function removeReaction(
+  messageId: string,
+  emoji: string,
+): StoredMessage | null {
+  const msg = messages.get(messageId)
+  if (!msg) return null
+  const current = msg.reactions[emoji] ?? 0
+  if (current <= 1) {
+    delete msg.reactions[emoji]
+  } else {
+    msg.reactions[emoji] = current - 1
+  }
+  return msg
+}
+
 export function getReactions(messageId: string): Record<string, number> | null {
   const msg = messages.get(messageId)
   return msg ? msg.reactions : null

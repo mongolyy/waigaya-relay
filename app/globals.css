@@ -303,10 +303,8 @@ details[open] .guide__summary::before {
 }
 
 .reaction--reacted {
-  background: rgba(99, 102, 241, 0.2);
+  background: rgba(99, 102, 241, 0.3);
   border-color: var(--accent);
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .reaction__count {

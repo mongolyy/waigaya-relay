@@ -100,11 +100,11 @@ export default function MessageComposer({ configured }: Props) {
 
   async function handleReaction(messageId: string, emoji: string) {
     const msg = postedMessages.find((m) => m.id === messageId)
-    if (msg?.userReacted.has(emoji)) return
+    const alreadyReacted = msg?.userReacted.has(emoji) ?? false
 
     try {
       const res = await fetch('/api/reactions', {
-        method: 'POST',
+        method: alreadyReacted ? 'DELETE' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messageId, emoji }),
       })
@@ -114,7 +114,11 @@ export default function MessageComposer({ configured }: Props) {
         prev.map((m) => {
           if (m.id !== messageId) return m
           const userReacted = new Set(m.userReacted)
-          userReacted.add(emoji)
+          if (alreadyReacted) {
+            userReacted.delete(emoji)
+          } else {
+            userReacted.add(emoji)
+          }
           return { ...m, reactions: data.reactions, userReacted }
         }),
       )
@@ -262,8 +266,7 @@ export default function MessageComposer({ configured }: Props) {
                       type="button"
                       className={`reaction ${reacted ? 'reaction--reacted' : count > 0 ? 'reaction--active' : ''}`}
                       onClick={() => handleReaction(msg.id, emoji)}
-                      disabled={reacted}
-                      aria-label={`React with ${emoji}${count > 0 ? `, ${count}` : ''}${reacted ? ' (reacted)' : ''}`}
+                      aria-label={`${reacted ? 'Remove reaction' : 'React with'} ${emoji}${count > 0 ? `, ${count}` : ''}`}
                     >
                       {emoji}
                       {count > 0 && (
