@@ -45,8 +45,16 @@ export default function MessageComposer({ configured }: Props) {
         | PostMessageResponse
         | { ok: false; error: string }
 
-      if ('error' in data) {
+      if (data && 'error' in data) {
         setStatus({ kind: 'error', message: data.error })
+        return
+      }
+
+      if (!data || !('results' in data) || !Array.isArray(data.results)) {
+        setStatus({
+          kind: 'error',
+          message: 'Received an invalid response from the server.',
+        })
         return
       }
 
@@ -143,6 +151,7 @@ export default function MessageComposer({ configured }: Props) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={sending}
+          maxLength={4000}
         />
         <button
           type="submit"
