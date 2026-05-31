@@ -1,18 +1,34 @@
 'use client'
 
 import { useState } from 'react'
-import type { PostMessageResponse, RelayResult, RelayTarget } from '@/lib/types'
+import type {
+  PostMessageResponse,
+  ReactionsResponse,
+  RelayResult,
+  RelayTarget,
+} from '@/lib/types'
 
 const TARGET_LABEL: Record<RelayTarget, string> = {
   slack: 'Slack',
   teams: 'Microsoft Teams',
 }
 
-type Status =
+const PRESET_EMOJIS = ['👍', '❤️', '😄', '🎉', '🤔', '👀']
+
+type FormStatus =
   | { kind: 'idle' }
   | { kind: 'sending' }
   | { kind: 'error'; message: string }
-  | { kind: 'done'; ok: boolean; allSkipped: boolean; results: RelayResult[] }
+
+type PostedMessage = {
+  id: string
+  text: string
+  reactions: Record<string, number>
+  userReacted: Set<string>
+  ok: boolean
+  allSkipped: boolean
+  results: RelayResult[]
+}
 
 interface Props {
   configured: Record<RelayTarget, boolean>
@@ -20,9 +36,10 @@ interface Props {
 
 export default function MessageComposer({ configured }: Props) {
   const [message, setMessage] = useState('')
-  const [status, setStatus] = useState<Status>({ kind: 'idle' })
+  const [formStatus, setFormStatus] = useState<FormStatus>({ kind: 'idle' })
+  const [postedMessages, setPostedMessages] = useState<PostedMessage[]>([])
 
-  const sending = status.kind === 'sending'
+  const sending = formStatus.kind === 'sending'
   const unconfigured = (Object.keys(configured) as RelayTarget[]).filter(
     (t) => !configured[t],
   )
@@ -32,7 +49,7 @@ export default function MessageComposer({ configured }: Props) {
     const trimmed = message.trim()
     if (!trimmed || sending) return
 
-    setStatus({ kind: 'sending' })
+    setFormStatus({ kind: 'sending' })
 
     try {
       const res = await fetch('/api/messages', {
@@ -46,12 +63,12 @@ export default function MessageComposer({ configured }: Props) {
         | { ok: false; error: string }
 
       if (data && 'error' in data) {
-        setStatus({ kind: 'error', message: data.error })
+        setFormStatus({ kind: 'error', message: data.error })
         return
       }
 
       if (!data || !('results' in data) || !Array.isArray(data.results)) {
-        setStatus({
+        setFormStatus({
           kind: 'error',
           message: 'Received an invalid response from the server.',
         })
@@ -59,18 +76,54 @@ export default function MessageComposer({ configured }: Props) {
       }
 
       const allSkipped = data.results.every((r) => r.skipped)
-      setStatus({
-        kind: 'done',
-        ok: data.ok,
-        allSkipped,
-        results: data.results,
-      })
+      setPostedMessages((prev) => [
+        {
+          id: data.messageId,
+          text: trimmed,
+          reactions: {},
+          userReacted: new Set(),
+          ok: data.ok,
+          allSkipped,
+          results: data.results,
+        },
+        ...prev,
+      ])
+      setFormStatus({ kind: 'idle' })
       if (data.ok || allSkipped) setMessage('')
     } catch {
-      setStatus({
+      setFormStatus({
         kind: 'error',
         message: 'Failed to send. Please check your network connection.',
       })
+    }
+  }
+
+  async function handleReaction(messageId: string, emoji: string) {
+    const msg = postedMessages.find((m) => m.id === messageId)
+    const alreadyReacted = msg?.userReacted.has(emoji) ?? false
+
+    try {
+      const res = await fetch('/api/reactions', {
+        method: alreadyReacted ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId, emoji }),
+      })
+      if (!res.ok) return
+      const data = (await res.json()) as ReactionsResponse
+      setPostedMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== messageId) return m
+          const userReacted = new Set(m.userReacted)
+          if (alreadyReacted) {
+            userReacted.delete(emoji)
+          } else {
+            userReacted.add(emoji)
+          }
+          return { ...m, reactions: data.reactions, userReacted }
+        }),
+      )
+    } catch {
+      // reaction failure is non-critical; silently ignore
     }
   }
 
@@ -162,59 +215,71 @@ export default function MessageComposer({ configured }: Props) {
         </button>
       </form>
 
-      <section className="status" aria-live="polite">
-        {status.kind === 'error' && (
+      {formStatus.kind === 'error' && (
+        <section className="status" aria-live="polite">
           <p className="status__banner status__banner--error">
-            ⚠️ {status.message}
+            ⚠️ {formStatus.message}
           </p>
-        )}
+        </section>
+      )}
 
-        {status.kind === 'done' && (
-          <>
-            <p
-              className={`status__banner ${
-                status.ok
-                  ? 'status__banner--ok'
-                  : status.allSkipped
-                    ? 'status__banner--warn'
-                    : 'status__banner--error'
-              }`}
-            >
-              {status.ok
-                ? '✅ Relayed! Start a thread and get the discussion going.'
-                : status.allSkipped
-                  ? '⚠️ No relay targets configured — message was not sent.'
-                  : '⚠️ Relay failed. See details below.'}
-            </p>
-            <ul className="status__list">
-              {status.results.map((r) => (
-                <li key={r.target} className="status__item">
-                  <span
-                    className={`status__dot ${
-                      r.skipped
-                        ? 'status__dot--skip'
+      {postedMessages.length > 0 && (
+        <section className="messages" aria-label="Posted messages">
+          {postedMessages.map((msg) => (
+            <article key={msg.id} className="message">
+              <p className="message__text">{msg.text}</p>
+
+              <ul className="status__list">
+                {msg.results.map((r) => (
+                  <li key={r.target} className="status__item">
+                    <span
+                      className={`status__dot ${
+                        r.skipped
+                          ? 'status__dot--skip'
+                          : r.ok
+                            ? 'status__dot--ok'
+                            : 'status__dot--error'
+                      }`}
+                    />
+                    <span className="status__target">
+                      {TARGET_LABEL[r.target]}
+                    </span>
+                    <span className="status__detail">
+                      {r.skipped
+                        ? 'skipped (not configured)'
                         : r.ok
-                          ? 'status__dot--ok'
-                          : 'status__dot--error'
-                    }`}
-                  />
-                  <span className="status__target">
-                    {TARGET_LABEL[r.target]}
-                  </span>
-                  <span className="status__detail">
-                    {r.skipped
-                      ? 'skipped (not configured)'
-                      : r.ok
-                        ? 'success'
-                        : 'failed'}
-                    {r.detail && !r.skipped ? ` — ${r.detail}` : ''}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </section>
+                          ? 'success'
+                          : 'failed'}
+                      {r.detail && !r.skipped ? ` — ${r.detail}` : ''}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="reactions">
+                {PRESET_EMOJIS.map((emoji) => {
+                  const count = msg.reactions[emoji] ?? 0
+                  const reacted = msg.userReacted.has(emoji)
+                  return (
+                    <button
+                      key={emoji}
+                      type="button"
+                      className={`reaction ${reacted ? 'reaction--reacted' : count > 0 ? 'reaction--active' : ''}`}
+                      onClick={() => handleReaction(msg.id, emoji)}
+                      aria-label={`${reacted ? 'Remove reaction' : 'React with'} ${emoji}${count > 0 ? `, ${count}` : ''}`}
+                    >
+                      {emoji}
+                      {count > 0 && (
+                        <span className="reaction__count">{count}</span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
     </main>
   )
 }

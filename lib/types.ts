@@ -23,4 +23,15 @@ export interface PostMessageResponse {
   /** すべての「実行された」中継が成功したか。 */
   ok: boolean
   results: RelayResult[]
+  /** 投稿されたメッセージの識別子。リアクション API で使用する。 */
+  messageId: string
+}
+
+export interface AddReactionRequest {
+  messageId: string
+  emoji: string
+}
+
+export interface ReactionsResponse {
+  reactions: Record<string, number>
 }
