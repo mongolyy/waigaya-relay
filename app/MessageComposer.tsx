@@ -72,11 +72,13 @@ function generateCode(): string {
 
 function findExistingCode(initialCode?: string): string | null {
   if (initialCode && CODE_PATTERN.test(initialCode)) return initialCode
-  try {
-    const stored = window.sessionStorage.getItem(SESSION_KEY)
-    if (stored && CODE_PATTERN.test(stored)) return stored
-  } catch {
-    // sessionStorage unavailable
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = window.sessionStorage.getItem(SESSION_KEY)
+      if (stored && CODE_PATTERN.test(stored)) return stored
+    } catch {
+      // sessionStorage unavailable
+    }
   }
   return fallbackCode
 }
@@ -209,17 +211,9 @@ export default function MessageComposer({
     const code = joinInput.trim()
     if (!code) return
     if (!CODE_PATTERN.test(code)) {
-      if (phase === 'setup') {
-        setJoinError(
-          'Invalid code. It must be 12 lowercase alphanumeric characters.',
-        )
-      } else {
-        setFormStatus({
-          kind: 'error',
-          message:
-            'Invalid conversation code. It must be 12 lowercase alphanumeric characters.',
-        })
-      }
+      setJoinError(
+        'Invalid code. It must be 12 lowercase alphanumeric characters.',
+      )
       return
     }
     saveCode(code)
@@ -512,21 +506,30 @@ export default function MessageComposer({
             className="flex items-center gap-2 pt-1 border-t border-slate-800"
             onSubmit={handleJoin}
           >
-            <input
-              className="flex-1 min-w-0 px-2.5 py-1 rounded border border-slate-700 bg-slate-800 text-slate-200 font-mono text-xs placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-transparent"
-              type="text"
-              placeholder="Enter code to join another conversation…"
-              value={joinInput}
-              onChange={(e) => setJoinInput(e.target.value)}
-              disabled={sending}
-            />
-            <button
-              type="submit"
-              className="shrink-0 px-2.5 py-1 rounded border border-slate-700 bg-transparent text-slate-400 text-xs cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={sending || !joinInput.trim()}
-            >
-              Join
-            </button>
+            <div className="flex items-center gap-2">
+              <input
+                className="flex-1 min-w-0 px-2.5 py-1 rounded border border-slate-700 bg-slate-800 text-slate-200 font-mono text-xs placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-transparent"
+                type="text"
+                placeholder="Enter code to join another conversation…"
+                value={joinInput}
+                onChange={(e) => {
+                  setJoinInput(e.target.value)
+                  setJoinError('')
+                }}
+                maxLength={12}
+                disabled={sending}
+              />
+              <button
+                type="submit"
+                className="shrink-0 px-2.5 py-1 rounded border border-slate-700 bg-transparent text-slate-400 text-xs cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={sending || !joinInput.trim()}
+              >
+                Join
+              </button>
+            </div>
+            {joinError && (
+              <p className="m-0 text-xs text-red-400">{joinError}</p>
+            )}
           </form>
         </div>
         <label className="font-semibold text-sm" htmlFor="message">
