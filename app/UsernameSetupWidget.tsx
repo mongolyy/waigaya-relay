@@ -56,7 +56,7 @@ export default function UsernameSetupWidget({
   return (
     <dialog
       ref={dialogRef}
-      className="border-0 rounded-2xl bg-slate-800 text-slate-200 p-9 w-[calc(100vw_-_32px)] max-w-[420px] shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
+      className="m-auto border-0 rounded-2xl bg-slate-800 text-slate-200 p-9 w-[calc(100vw_-_32px)] max-w-[420px] shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
     >
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <h2 className="m-0 text-xl flex flex-col gap-1">
