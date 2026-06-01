@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+# Cancel superseded runs on the same ref so a new push to a PR frees runners
+# instead of queueing behind outdated jobs. Pushes to main keep their own group
+# per commit SHA so historical runs are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 
