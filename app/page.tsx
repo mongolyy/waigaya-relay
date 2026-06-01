@@ -10,7 +10,13 @@ interface PageProps {
 
 export default async function Page({ searchParams }: PageProps) {
   const cookieStore = await cookies()
-  const username = cookieStore.get(USERNAME_COOKIE)?.value ?? ''
+  const rawUsername = cookieStore.get(USERNAME_COOKIE)?.value ?? ''
+  let username = rawUsername
+  try {
+    username = decodeURIComponent(rawUsername)
+  } catch {
+    // keep the raw value if it can't be decoded
+  }
   const { code } = await searchParams
 
   const configured = {
