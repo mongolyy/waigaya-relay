@@ -1,8 +1,27 @@
 import { NextResponse } from 'next/server'
+import { getMessages } from '@/lib/store'
 import { relayMessage } from '@/lib/usecase/relayMessage'
 
 // Run on the Node.js runtime to allow outbound fetch to external services.
 export const runtime = 'nodejs'
+
+const SESSION_ID_PATTERN = /^[a-z0-9]{12}$/
+
+/** Fetch all messages for a conversation session. */
+export async function GET(request: Request): Promise<NextResponse> {
+  const { searchParams } = new URL(request.url)
+  const sessionId = searchParams.get('sessionId')
+
+  if (!sessionId || !SESSION_ID_PATTERN.test(sessionId)) {
+    return NextResponse.json(
+      { ok: false, error: 'A valid sessionId is required.' },
+      { status: 400 },
+    )
+  }
+
+  const messages = await getMessages(sessionId)
+  return NextResponse.json({ messages })
+}
 
 /** Relay a message to Slack and/or Teams. */
 export async function POST(request: Request): Promise<NextResponse> {

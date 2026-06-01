@@ -55,7 +55,7 @@ export async function relayMessage(
     typeof input.sessionId === 'string' ? input.sessionId.trim() : ''
 
   const messageId = randomUUID()
-  createMessage(messageId, message)
+  await createMessage(sessionId || 'default', messageId, message, username)
 
   const session = sessionId ? await getSessionThread(sessionId) : null
   const slackThreadTs = session?.slackThreadTs

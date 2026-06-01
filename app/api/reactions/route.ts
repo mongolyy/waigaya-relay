@@ -10,7 +10,7 @@ export const runtime = 'nodejs'
 
 export async function GET(request: Request): Promise<NextResponse> {
   const { searchParams } = new URL(request.url)
-  const result = getReactions(searchParams.get('messageId'))
+  const result = await getReactions(searchParams.get('messageId'))
 
   if (result.kind === 'validation_error') {
     return NextResponse.json(
@@ -46,7 +46,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const { messageId, emoji } = body as Partial<AddReactionRequest>
-  const result = addReaction(messageId, emoji)
+  const result = await addReaction(messageId, emoji)
 
   if (result.kind === 'validation_error') {
     return NextResponse.json(
@@ -82,7 +82,7 @@ export async function DELETE(request: Request): Promise<NextResponse> {
   }
 
   const { messageId, emoji } = body as Partial<AddReactionRequest>
-  const result = removeReaction(messageId, emoji)
+  const result = await removeReaction(messageId, emoji)
 
   if (result.kind === 'validation_error') {
     return NextResponse.json(

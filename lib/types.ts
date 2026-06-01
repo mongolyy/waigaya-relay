@@ -1,6 +1,20 @@
 /** Relay destination identifier. Extend from this type when adding channels. */
 export type RelayTarget = 'slack' | 'teams'
 
+/** A message stored in the backend. */
+export interface StoredMessage {
+  id: string
+  text: string
+  username?: string
+  createdAt: string
+  reactions: Record<string, number>
+}
+
+/** Response for GET /api/messages. */
+export interface GetMessagesResponse {
+  messages: StoredMessage[]
+}
+
 /** Message-send request received from the frontend. */
 export interface PostMessageRequest {
   /** Message body. */
