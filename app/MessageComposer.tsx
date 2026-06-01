@@ -118,8 +118,6 @@ export default function MessageComposer({
   const [conversationCode, setConversationCode] = useState(
     () => findExistingCode(initialCode) ?? '',
   )
-  const [joinInput, setJoinInput] = useState('')
-  const [joinError, setJoinError] = useState('')
   const [copyLabel, setCopyLabel] = useState<'copy' | 'copied'>('copy')
   const [message, setMessage] = useState('')
   const [formStatus, setFormStatus] = useState<FormStatus>({ kind: 'idle' })
@@ -206,23 +204,17 @@ export default function MessageComposer({
     handleStartNew()
   }
 
-  function handleJoin(e: React.FormEvent) {
-    e.preventDefault()
-    const code = joinInput.trim()
-    if (!code) return
-    if (!CODE_PATTERN.test(code)) {
-      setJoinError(
-        'Invalid code. It must be 12 lowercase alphanumeric characters.',
-      )
-      return
+  function handleLeave() {
+    try {
+      window.sessionStorage.removeItem(SESSION_KEY)
+    } catch {
+      // sessionStorage unavailable
     }
-    saveCode(code)
-    setConversationCode(code)
-    setJoinInput('')
-    setJoinError('')
+    fallbackCode = null
+    setConversationCode('')
     setPostedMessages([])
     setFormStatus({ kind: 'idle' })
-    setPhase('active')
+    setPhase('setup')
   }
 
   const handleCopyCode = useCallback(async () => {
@@ -297,56 +289,6 @@ export default function MessageComposer({
             </span>
             <span className="text-indigo-200 text-sm">新しい会話を始める</span>
           </button>
-
-          <div className="relative flex items-center gap-3">
-            <span className="flex-1 h-px bg-slate-700" />
-            <span className="text-slate-500 text-xs">or</span>
-            <span className="flex-1 h-px bg-slate-700" />
-          </div>
-
-          <form
-            className="flex flex-col gap-3 bg-slate-800 p-5 rounded-xl"
-            onSubmit={handleJoin}
-          >
-            <div className="flex flex-col gap-1">
-              <label
-                className="font-semibold text-sm"
-                htmlFor="join-code-input"
-              >
-                Join existing conversation
-                <span className="ml-2 text-[0.75rem] font-normal text-slate-400">
-                  既存の会話に参加する
-                </span>
-              </label>
-              <p className="m-0 text-xs text-slate-400">
-                Enter the 12-character code shared by another participant.
-              </p>
-            </div>
-            <input
-              id="join-code-input"
-              className="w-full px-3 py-2.5 rounded-lg border border-slate-700 bg-slate-900 text-slate-200 font-mono placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              type="text"
-              placeholder="e.g. abc4def5ghi6"
-              value={joinInput}
-              onChange={(e) => {
-                setJoinInput(e.target.value)
-                setJoinError('')
-              }}
-              maxLength={12}
-              autoComplete="off"
-              spellCheck={false}
-            />
-            {joinError && (
-              <p className="m-0 text-xs text-red-400">{joinError}</p>
-            )}
-            <button
-              type="submit"
-              className="self-end px-5 py-2.5 border-0 rounded-lg bg-slate-700 text-white font-semibold cursor-pointer transition-colors hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!joinInput.trim()}
-            >
-              Join
-            </button>
-          </form>
         </div>
       </main>
     )
@@ -354,12 +296,22 @@ export default function MessageComposer({
 
   return (
     <main className="max-w-xl mx-auto py-12 px-5">
-      <header className="mb-7">
-        <h1 className="m-0 mb-2 text-3xl font-bold">waigaya-relay 📣</h1>
-        <p className="m-0 text-slate-400">
-          Post a message and relay it to Slack and Microsoft Teams to spark a
-          lively discussion.
-        </p>
+      <header className="mb-7 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="m-0 mb-2 text-3xl font-bold">waigaya-relay 📣</h1>
+          <p className="m-0 text-slate-400">
+            Post a message and relay it to Slack and Microsoft Teams to spark a
+            lively discussion.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="shrink-0 flex flex-col items-center gap-0.5 mt-1 px-3 py-1.5 rounded-lg border border-slate-700 bg-transparent text-slate-400 text-xs cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors"
+          onClick={handleLeave}
+        >
+          Leave
+          <span className="text-[0.7rem] text-slate-500">退出</span>
+        </button>
       </header>
 
       <details className="mb-5 border border-slate-700 rounded-xl overflow-hidden group">
@@ -501,36 +453,6 @@ export default function MessageComposer({
               {copyLabel === 'copied' ? '✓ Copied' : 'Copy'}
             </button>
           </div>
-
-          <form
-            className="flex items-center gap-2 pt-1 border-t border-slate-800"
-            onSubmit={handleJoin}
-          >
-            <div className="flex items-center gap-2">
-              <input
-                className="flex-1 min-w-0 px-2.5 py-1 rounded border border-slate-700 bg-slate-800 text-slate-200 font-mono text-xs placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-transparent"
-                type="text"
-                placeholder="Enter code to join another conversation…"
-                value={joinInput}
-                onChange={(e) => {
-                  setJoinInput(e.target.value)
-                  setJoinError('')
-                }}
-                maxLength={12}
-                disabled={sending}
-              />
-              <button
-                type="submit"
-                className="shrink-0 px-2.5 py-1 rounded border border-slate-700 bg-transparent text-slate-400 text-xs cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={sending || !joinInput.trim()}
-              >
-                Join
-              </button>
-            </div>
-            {joinError && (
-              <p className="m-0 text-xs text-red-400">{joinError}</p>
-            )}
-          </form>
         </div>
         <label className="font-semibold text-sm" htmlFor="message">
           Message
