@@ -20,6 +20,8 @@ This project uses **English** as the primary language. Use English for:
 
 When new changes are pushed to a PR branch, update the PR title and description to reflect the current state of all changes on the branch.
 
+When creating or updating a PR description, follow `.github/PULL_REQUEST_TEMPLATE.md` exactly — use only the sections defined there and do not add extra sections (e.g. do not add a "Changes" section).
+
 ## Pull Request Review Comments
 
 When subscribed to PR activity, always reply to every review comment — including bot comments (e.g., Gemini, CodeRabbit). Acknowledge the finding and briefly explain the decision taken (accepted, rejected with reason, or no action needed).
