@@ -276,7 +276,6 @@ export default function MessageComposer({
             </span>
             <span className="text-indigo-200 text-sm">新しい会話を始める</span>
           </button>
-
         </div>
       </main>
     )
@@ -431,7 +430,6 @@ export default function MessageComposer({
               {copyLabel === 'copied' ? '✓ Copied' : 'Copy'}
             </button>
           </div>
-
         </div>
         <label className="font-semibold text-sm" htmlFor="message">
           Message
