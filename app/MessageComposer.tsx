@@ -204,6 +204,19 @@ export default function MessageComposer({
     handleStartNew()
   }
 
+  function handleLeave() {
+    try {
+      window.sessionStorage.removeItem(SESSION_KEY)
+    } catch {
+      // sessionStorage unavailable
+    }
+    fallbackCode = null
+    setConversationCode('')
+    setPostedMessages([])
+    setFormStatus({ kind: 'idle' })
+    setPhase('setup')
+  }
+
   const handleCopyCode = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(conversationCode)
@@ -283,12 +296,22 @@ export default function MessageComposer({
 
   return (
     <main className="max-w-xl mx-auto py-12 px-5">
-      <header className="mb-7">
-        <h1 className="m-0 mb-2 text-3xl font-bold">waigaya-relay 📣</h1>
-        <p className="m-0 text-slate-400">
-          Post a message and relay it to Slack and Microsoft Teams to spark a
-          lively discussion.
-        </p>
+      <header className="mb-7 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="m-0 mb-2 text-3xl font-bold">waigaya-relay 📣</h1>
+          <p className="m-0 text-slate-400">
+            Post a message and relay it to Slack and Microsoft Teams to spark a
+            lively discussion.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="shrink-0 flex flex-col items-center gap-0.5 mt-1 px-3 py-1.5 rounded-lg border border-slate-700 bg-transparent text-slate-400 text-xs cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors"
+          onClick={handleLeave}
+        >
+          Leave
+          <span className="text-[0.7rem] text-slate-500">退出</span>
+        </button>
       </header>
 
       <details className="mb-5 border border-slate-700 rounded-xl overflow-hidden group">
