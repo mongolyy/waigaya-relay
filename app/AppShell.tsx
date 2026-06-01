@@ -20,9 +20,14 @@ function setUsernameCookie(value: string) {
 interface Props {
   initialUsername: string
   configured: Record<RelayTarget, boolean>
+  initialCode?: string
 }
 
-export default function AppShell({ initialUsername, configured }: Props) {
+export default function AppShell({
+  initialUsername,
+  configured,
+  initialCode,
+}: Props) {
   const [username, setUsername] = useState(initialUsername)
   const [showWidget, setShowWidget] = useState(!initialUsername)
 
@@ -53,6 +58,7 @@ export default function AppShell({ initialUsername, configured }: Props) {
         configured={configured}
         username={username}
         onChangeUsername={handleChangeUsername}
+        initialCode={initialCode}
       />
     </>
   )
