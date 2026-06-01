@@ -24,11 +24,15 @@ function keyFor(sessionId: string): string {
   return `session:${sessionId}`
 }
 
+let redisInstance: Redis | null = null
+
 function getRedis(): Redis | null {
+  if (redisInstance) return redisInstance
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim()
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim()
   if (!url || !token) return null
-  return new Redis({ url, token, retry: false })
+  redisInstance = new Redis({ url, token, retry: false })
+  return redisInstance
 }
 
 /** Read the thread anchors for a session, or `null` when none exist yet. */

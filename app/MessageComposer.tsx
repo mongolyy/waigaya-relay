@@ -137,6 +137,8 @@ export default function MessageComposer({
   )
   // Tracks emojis the current user has reacted to (keyed by messageId).
   const localUserReacted = useRef(new Map<string, Set<string>>())
+  // Prevents double-submit: tracks in-flight reaction requests by "messageId-emoji".
+  const pendingReactions = useRef(new Set<string>())
 
   // Poll the server for messages every 3 seconds.
   useEffect(() => {
@@ -284,10 +286,14 @@ export default function MessageComposer({
   }, [conversationCode])
 
   async function handleReaction(messageId: string, emoji: string) {
+    const pendingKey = `${messageId}-${emoji}`
+    if (pendingReactions.current.has(pendingKey)) return
+    pendingReactions.current.add(pendingKey)
+
     const msg = postedMessages.find((m) => m.id === messageId)
     const alreadyReacted = msg?.userReacted.has(emoji) ?? false
 
-    const flashKey = `${messageId}-${emoji}`
+    const flashKey = pendingKey
     setReactionFlash((prev) => ({ ...prev, [flashKey]: true }))
 
     if (!alreadyReacted) {
@@ -323,6 +329,8 @@ export default function MessageComposer({
       )
     } catch {
       // reaction failure is non-critical; silently ignore
+    } finally {
+      pendingReactions.current.delete(pendingKey)
     }
   }
 
