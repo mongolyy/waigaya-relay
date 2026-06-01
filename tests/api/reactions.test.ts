@@ -33,7 +33,7 @@ describe('GET /api/reactions', () => {
   })
 
   it('returns empty reactions for a newly created message', async () => {
-    createMessage('msg-1', 'hello')
+    await createMessage('test-session', 'msg-1', 'hello')
     const res = await GET(makeGetRequest('msg-1'))
     expect(res.status).toBe(200)
     const data = await res.json()
@@ -42,8 +42,8 @@ describe('GET /api/reactions', () => {
 })
 
 describe('POST /api/reactions', () => {
-  beforeEach(() => {
-    createMessage('msg-2', 'test message')
+  beforeEach(async () => {
+    await createMessage('test-session', 'msg-2', 'test message')
   })
 
   it('returns 400 on invalid JSON body', async () => {
@@ -103,8 +103,8 @@ describe('POST /api/reactions', () => {
 })
 
 describe('DELETE /api/reactions', () => {
-  beforeEach(() => {
-    createMessage('msg-3', 'test message')
+  beforeEach(async () => {
+    await createMessage('test-session', 'msg-3', 'test message')
   })
 
   function makeDeleteRequest(body: unknown): Request {

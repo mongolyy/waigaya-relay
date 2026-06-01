@@ -11,11 +11,13 @@ export type ReactionResult =
   | { kind: 'not_found'; error: string }
   | { kind: 'success'; reactions: Record<string, number> }
 
-export function getReactions(messageId: string | null): ReactionResult {
+export async function getReactions(
+  messageId: string | null,
+): Promise<ReactionResult> {
   if (!messageId) {
     return { kind: 'validation_error', error: 'messageId is required.' }
   }
-  const reactions = storeGetReactions(messageId)
+  const reactions = await storeGetReactions(messageId)
   if (reactions === null) {
     return { kind: 'not_found', error: 'Message not found.' }
   }
@@ -35,32 +37,38 @@ function validateReaction(
   return { messageId, emoji }
 }
 
-export function addReaction(
+export async function addReaction(
   messageId: string | undefined,
   emoji: string | undefined,
-): ReactionResult {
+): Promise<ReactionResult> {
   const validation = validateReaction(messageId, emoji)
   if ('error' in validation) {
     return { kind: 'validation_error', error: validation.error }
   }
-  const msg = storeAddReaction(validation.messageId, validation.emoji)
-  if (!msg) {
+  const reactions = await storeAddReaction(
+    validation.messageId,
+    validation.emoji,
+  )
+  if (reactions === null) {
     return { kind: 'not_found', error: 'Message not found.' }
   }
-  return { kind: 'success', reactions: msg.reactions }
+  return { kind: 'success', reactions }
 }
 
-export function removeReaction(
+export async function removeReaction(
   messageId: string | undefined,
   emoji: string | undefined,
-): ReactionResult {
+): Promise<ReactionResult> {
   const validation = validateReaction(messageId, emoji)
   if ('error' in validation) {
     return { kind: 'validation_error', error: validation.error }
   }
-  const msg = storeRemoveReaction(validation.messageId, validation.emoji)
-  if (!msg) {
+  const reactions = await storeRemoveReaction(
+    validation.messageId,
+    validation.emoji,
+  )
+  if (reactions === null) {
     return { kind: 'not_found', error: 'Message not found.' }
   }
-  return { kind: 'success', reactions: msg.reactions }
+  return { kind: 'success', reactions }
 }

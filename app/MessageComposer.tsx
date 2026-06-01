@@ -1,11 +1,13 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type {
+  GetMessagesResponse,
   PostMessageResponse,
   ReactionsResponse,
   RelayResult,
   RelayTarget,
+  StoredMessage,
 } from '@/lib/types'
 
 const TARGET_LABEL: Record<RelayTarget, string> = {
@@ -88,15 +90,14 @@ type FormStatus =
   | { kind: 'sending' }
   | { kind: 'error'; message: string }
 
-type PostedMessage = {
-  id: string
-  text: string
-  username: string
-  reactions: Record<string, number>
+type PostedMessage = StoredMessage & {
   userReacted: Set<string>
-  ok: boolean
-  allSkipped: boolean
-  results: RelayResult[]
+  /** Only present for messages the current user sent in this session. */
+  relayStatus?: {
+    ok: boolean
+    allSkipped: boolean
+    results: RelayResult[]
+  }
 }
 
 interface Props {
@@ -126,6 +127,56 @@ export default function MessageComposer({
     {},
   )
   const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([])
+
+  // Tracks relay results for messages the current user sent (keyed by messageId).
+  const localRelayStatus = useRef(
+    new Map<
+      string,
+      { ok: boolean; allSkipped: boolean; results: RelayResult[] }
+    >(),
+  )
+  // Tracks emojis the current user has reacted to (keyed by messageId).
+  const localUserReacted = useRef(new Map<string, Set<string>>())
+
+  // Poll the server for messages every 3 seconds.
+  useEffect(() => {
+    if (phase !== 'active' || !conversationCode) return
+    let cancelled = false
+
+    async function poll() {
+      if (cancelled) return
+      try {
+        const res = await fetch(`/api/messages?sessionId=${conversationCode}`)
+        if (!res.ok || cancelled) return
+        const data = (await res.json()) as GetMessagesResponse
+        setPostedMessages((prev) => {
+          const prevMap = new Map(prev.map((m) => [m.id, m]))
+          return data.messages.map((serverMsg) => {
+            const existing = prevMap.get(serverMsg.id)
+            return {
+              ...serverMsg,
+              userReacted:
+                localUserReacted.current.get(serverMsg.id) ??
+                existing?.userReacted ??
+                new Set<string>(),
+              relayStatus:
+                localRelayStatus.current.get(serverMsg.id) ??
+                existing?.relayStatus,
+            }
+          })
+        })
+      } catch {
+        // polling failure is non-critical; silently ignore
+      }
+    }
+
+    poll()
+    const id = setInterval(poll, 3000)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [phase, conversationCode])
 
   const sending = formStatus.kind === 'sending'
   const unconfigured = (Object.keys(configured) as RelayTarget[]).filter(
@@ -168,18 +219,19 @@ export default function MessageComposer({
       }
 
       const allSkipped = data.results.every((r) => r.skipped)
+      const relayStatus = { ok: data.ok, allSkipped, results: data.results }
+      localRelayStatus.current.set(data.messageId, relayStatus)
       setPostedMessages((prev) => [
+        ...prev,
         {
           id: data.messageId,
           text: trimmed,
-          username,
+          username: username || undefined,
+          createdAt: new Date().toISOString(),
           reactions: {},
           userReacted: new Set(),
-          ok: data.ok,
-          allSkipped,
-          results: data.results,
+          relayStatus,
         },
-        ...prev,
       ])
       setFormStatus({ kind: 'idle' })
       if (data.ok || allSkipped) setMessage('')
@@ -197,6 +249,8 @@ export default function MessageComposer({
     setConversationCode(newCode)
     setPostedMessages([])
     setFormStatus({ kind: 'idle' })
+    localRelayStatus.current.clear()
+    localUserReacted.current.clear()
     setPhase('active')
   }
 
@@ -214,6 +268,8 @@ export default function MessageComposer({
     setConversationCode('')
     setPostedMessages([])
     setFormStatus({ kind: 'idle' })
+    localRelayStatus.current.clear()
+    localUserReacted.current.clear()
     setPhase('setup')
   }
 
@@ -250,16 +306,19 @@ export default function MessageComposer({
       })
       if (!res.ok) return
       const data = (await res.json()) as ReactionsResponse
+      const reacted =
+        localUserReacted.current.get(messageId) ?? new Set<string>()
+      if (alreadyReacted) reacted.delete(emoji)
+      else reacted.add(emoji)
+      localUserReacted.current.set(messageId, reacted)
       setPostedMessages((prev) =>
         prev.map((m) => {
           if (m.id !== messageId) return m
-          const userReacted = new Set(m.userReacted)
-          if (alreadyReacted) {
-            userReacted.delete(emoji)
-          } else {
-            userReacted.add(emoji)
+          return {
+            ...m,
+            reactions: data.reactions,
+            userReacted: new Set(reacted),
           }
-          return { ...m, reactions: data.reactions, userReacted }
         }),
       )
     } catch {
@@ -523,35 +582,37 @@ export default function MessageComposer({
                     {msg.text}
                   </p>
 
-                  <ul className="list-none m-0 p-0 flex flex-col gap-2">
-                    {msg.results.map((r) => (
-                      <li
-                        key={r.target}
-                        className="flex items-baseline gap-2.5 bg-slate-700/50 px-3.5 py-2.5 rounded-lg"
-                      >
-                        <span
-                          className={`size-2.5 rounded-full shrink-0 translate-y-px ${
-                            r.skipped
-                              ? 'bg-slate-400'
+                  {msg.relayStatus && (
+                    <ul className="list-none m-0 p-0 flex flex-col gap-2">
+                      {msg.relayStatus.results.map((r) => (
+                        <li
+                          key={r.target}
+                          className="flex items-baseline gap-2.5 bg-slate-700/50 px-3.5 py-2.5 rounded-lg"
+                        >
+                          <span
+                            className={`size-2.5 rounded-full shrink-0 translate-y-px ${
+                              r.skipped
+                                ? 'bg-slate-400'
+                                : r.ok
+                                  ? 'bg-green-500'
+                                  : 'bg-red-500'
+                            }`}
+                          />
+                          <span className="font-semibold min-w-[7em]">
+                            {TARGET_LABEL[r.target]}
+                          </span>
+                          <span className="text-slate-400 text-sm">
+                            {r.skipped
+                              ? 'skipped (not configured)'
                               : r.ok
-                                ? 'bg-green-500'
-                                : 'bg-red-500'
-                          }`}
-                        />
-                        <span className="font-semibold min-w-[7em]">
-                          {TARGET_LABEL[r.target]}
-                        </span>
-                        <span className="text-slate-400 text-sm">
-                          {r.skipped
-                            ? 'skipped (not configured)'
-                            : r.ok
-                              ? 'success'
-                              : 'failed'}
-                          {r.detail && !r.skipped ? ` — ${r.detail}` : ''}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                                ? 'success'
+                                : 'failed'}
+                            {r.detail && !r.skipped ? ` — ${r.detail}` : ''}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
 
                   <div className="flex flex-wrap gap-1.5">
                     {PRESET_EMOJIS.map((emoji) => {
