@@ -4,20 +4,16 @@
 
 # Read tool input JSON from stdin
 INPUT=$(cat)
-COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
+
+# Skip if required tools are not available
+if ! command -v jq &>/dev/null || ! command -v claude &>/dev/null; then
+  exit 0
+fi
+
+COMMAND=$(jq -r '.tool_input.command // empty' <<< "$INPUT" 2>/dev/null)
 
 # Only act on git push commands
 if [[ "$COMMAND" != *"git push"* ]]; then
-  exit 0
-fi
-
-# Skip if claude CLI is not available
-if ! command -v claude &>/dev/null; then
-  exit 0
-fi
-
-# Skip re-entrant calls (when this script itself triggers another push)
-if [ "${SKIP_DOC_CHECK:-0}" = "1" ]; then
   exit 0
 fi
 
@@ -25,6 +21,12 @@ BASE_BRANCH="main"
 
 # Skip if origin/main is not reachable (first push of a brand-new repo)
 if ! git rev-parse "origin/$BASE_BRANCH" &>/dev/null 2>&1; then
+  exit 0
+fi
+
+# Re-entrancy guard: skip if the last commit was already a doc update by this hook
+LAST_COMMIT=$(git log -1 --pretty=%s 2>/dev/null)
+if [[ "$LAST_COMMIT" == "docs: update README/CLAUDE.md"* ]]; then
   exit 0
 fi
 
@@ -44,9 +46,12 @@ fi
 echo "[doc-check] Reviewing documentation against code changes..." >&2
 
 # Cap diff size to avoid overwhelming the model
-TRIMMED_DIFF=$(echo "$DIFF" | head -600)
+TRIMMED_DIFF=$(head -n 600 <<< "$DIFF")
 
-claude --allowedTools "Edit,Write" -p "
+# Prevent re-entrant hook execution in any nested Claude session
+export SKIP_DOC_CHECK=1
+
+claude -y --allowedTools "Edit,Write" -p "
 You are reviewing code changes about to be pushed to this repository.
 
 Inspect README.md and CLAUDE.md and update them ONLY if the diff below directly affects:
@@ -66,7 +71,7 @@ Rules:
 - Only update content that is factually affected by the diff. Do not add speculative content.
 - Keep the existing tone and structure of each file.
 - If no update is needed, output exactly: NO_UPDATES_NEEDED
-"
+" < /dev/null
 
 # If docs were modified, block the push and instruct Claude to commit them first
 if ! git diff --quiet README.md CLAUDE.md 2>/dev/null; then
