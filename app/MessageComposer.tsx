@@ -70,21 +70,15 @@ function generateCode(): string {
   return Array.from(bytes, (b) => CODE_CHARS[b % CODE_CHARS.length]).join('')
 }
 
-function loadOrCreateCode(initialCode?: string): string {
-  if (initialCode && CODE_PATTERN.test(initialCode)) {
-    saveCode(initialCode)
-    return initialCode
-  }
+function findExistingCode(initialCode?: string): string | null {
+  if (initialCode && CODE_PATTERN.test(initialCode)) return initialCode
   try {
     const stored = window.sessionStorage.getItem(SESSION_KEY)
     if (stored && CODE_PATTERN.test(stored)) return stored
   } catch {
     // sessionStorage unavailable
   }
-  if (fallbackCode) return fallbackCode
-  const newCode = generateCode()
-  saveCode(newCode)
-  return newCode
+  return fallbackCode
 }
 
 type FormStatus =
@@ -116,10 +110,14 @@ export default function MessageComposer({
   onChangeUsername,
   initialCode,
 }: Props) {
-  const [conversationCode, setConversationCode] = useState(() =>
-    loadOrCreateCode(initialCode),
+  const [phase, setPhase] = useState<'setup' | 'active'>(() =>
+    findExistingCode(initialCode) ? 'active' : 'setup',
+  )
+  const [conversationCode, setConversationCode] = useState(
+    () => findExistingCode(initialCode) ?? '',
   )
   const [joinInput, setJoinInput] = useState('')
+  const [joinError, setJoinError] = useState('')
   const [copyLabel, setCopyLabel] = useState<'copy' | 'copied'>('copy')
   const [message, setMessage] = useState('')
   const [formStatus, setFormStatus] = useState<FormStatus>({ kind: 'idle' })
@@ -193,12 +191,17 @@ export default function MessageComposer({
     }
   }
 
-  function handleNewThread() {
+  function handleStartNew() {
     const newCode = generateCode()
     saveCode(newCode)
     setConversationCode(newCode)
     setPostedMessages([])
     setFormStatus({ kind: 'idle' })
+    setPhase('active')
+  }
+
+  function handleNewThread() {
+    handleStartNew()
   }
 
   function handleJoin(e: React.FormEvent) {
@@ -206,18 +209,26 @@ export default function MessageComposer({
     const code = joinInput.trim()
     if (!code) return
     if (!CODE_PATTERN.test(code)) {
-      setFormStatus({
-        kind: 'error',
-        message:
-          'Invalid conversation code. It must be 12 lowercase alphanumeric characters.',
-      })
+      if (phase === 'setup') {
+        setJoinError(
+          'Invalid code. It must be 12 lowercase alphanumeric characters.',
+        )
+      } else {
+        setFormStatus({
+          kind: 'error',
+          message:
+            'Invalid conversation code. It must be 12 lowercase alphanumeric characters.',
+        })
+      }
       return
     }
     saveCode(code)
     setConversationCode(code)
     setJoinInput('')
+    setJoinError('')
     setPostedMessages([])
     setFormStatus({ kind: 'idle' })
+    setPhase('active')
   }
 
   const handleCopyCode = useCallback(async () => {
@@ -268,6 +279,83 @@ export default function MessageComposer({
     } catch {
       // reaction failure is non-critical; silently ignore
     }
+  }
+
+  if (phase === 'setup') {
+    return (
+      <main className="max-w-xl mx-auto py-12 px-5">
+        <header className="mb-8">
+          <h1 className="m-0 mb-2 text-3xl font-bold">waigaya-relay 📣</h1>
+          <p className="m-0 text-slate-400">
+            Post a message and relay it to Slack and Microsoft Teams to spark a
+            lively discussion.
+          </p>
+        </header>
+
+        <div className="flex flex-col gap-4">
+          <button
+            type="button"
+            className="w-full flex flex-col items-start gap-1 px-6 py-5 rounded-xl bg-indigo-500 hover:bg-indigo-600 transition-colors cursor-pointer border-0 text-left"
+            onClick={handleStartNew}
+          >
+            <span className="font-bold text-white text-base">
+              Start new conversation
+            </span>
+            <span className="text-indigo-200 text-sm">新しい会話を始める</span>
+          </button>
+
+          <div className="relative flex items-center gap-3">
+            <span className="flex-1 h-px bg-slate-700" />
+            <span className="text-slate-500 text-xs">or</span>
+            <span className="flex-1 h-px bg-slate-700" />
+          </div>
+
+          <form
+            className="flex flex-col gap-3 bg-slate-800 p-5 rounded-xl"
+            onSubmit={handleJoin}
+          >
+            <div className="flex flex-col gap-1">
+              <label
+                className="font-semibold text-sm"
+                htmlFor="join-code-input"
+              >
+                Join existing conversation
+                <span className="ml-2 text-[0.75rem] font-normal text-slate-400">
+                  既存の会話に参加する
+                </span>
+              </label>
+              <p className="m-0 text-xs text-slate-400">
+                Enter the 12-character code shared by another participant.
+              </p>
+            </div>
+            <input
+              id="join-code-input"
+              className="w-full px-3 py-2.5 rounded-lg border border-slate-700 bg-slate-900 text-slate-200 font-mono placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              type="text"
+              placeholder="e.g. abc4def5ghi6"
+              value={joinInput}
+              onChange={(e) => {
+                setJoinInput(e.target.value)
+                setJoinError('')
+              }}
+              maxLength={12}
+              autoComplete="off"
+              spellCheck={false}
+            />
+            {joinError && (
+              <p className="m-0 text-xs text-red-400">{joinError}</p>
+            )}
+            <button
+              type="submit"
+              className="self-end px-5 py-2.5 border-0 rounded-lg bg-slate-700 text-white font-semibold cursor-pointer transition-colors hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!joinInput.trim()}
+            >
+              Join
+            </button>
+          </form>
+        </div>
+      </main>
+    )
   }
 
   return (
