@@ -152,8 +152,11 @@ export default function MessageComposer({
         if (!res.ok || cancelled) return
         const data = (await res.json()) as GetMessagesResponse
         setPostedMessages((prev) => {
+          if (!data || !Array.isArray(data.messages)) return prev
           const prevMap = new Map(prev.map((m) => [m.id, m]))
-          return data.messages.map((serverMsg) => {
+          const serverIds = new Set(data.messages.map((m) => m.id))
+          const localOnly = prev.filter((m) => !serverIds.has(m.id))
+          const updated = data.messages.map((serverMsg) => {
             const existing = prevMap.get(serverMsg.id)
             return {
               ...serverMsg,
@@ -166,6 +169,7 @@ export default function MessageComposer({
                 existing?.relayStatus,
             }
           })
+          return [...updated, ...localOnly]
         })
       } catch {
         // polling failure is non-critical; silently ignore

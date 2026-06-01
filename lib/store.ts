@@ -160,12 +160,11 @@ export async function removeReaction(
   try {
     const exists = await redis.exists(`message:${messageId}`)
     if (!exists) return null
-    const current = await redis.hget<number>(`reactions:${messageId}`, emoji)
-    if ((current ?? 0) <= 1) {
-      await redis.hdel(`reactions:${messageId}`, emoji)
-    } else {
-      await redis.hincrby(`reactions:${messageId}`, emoji, -1)
-    }
+    // Lua script ensures check+decrement/delete is atomic, preventing TOCTOU races
+    // when multiple users react simultaneously.
+    const luaScript =
+      "local c=tonumber(redis.call('hget',KEYS[1],ARGV[1])) if c then if c<=1 then redis.call('hdel',KEYS[1],ARGV[1]) else redis.call('hincrby',KEYS[1],ARGV[1],-1) end end return 1"
+    await redis.eval(luaScript, [`reactions:${messageId}`], [emoji])
     return await kvGetReactions(redis, messageId)
   } catch (err) {
     console.error('Redis removeReaction failed; falling back to memory.', err)
