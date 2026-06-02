@@ -1,4 +1,4 @@
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs'
+import { chromium } from 'playwright'
 import { mkdir } from 'node:fs/promises'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -8,7 +8,7 @@ const outDir = resolve(__dirname, '../docs')
 await mkdir(outDir, { recursive: true })
 
 const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+  executablePath: process.env.CHROME_PATH || undefined,
   args: ['--no-sandbox', '--disable-setuid-sandbox'],
 })
 
@@ -20,7 +20,7 @@ const context = await browser.newContext({
 
 const page = await context.newPage()
 
-await page.goto('http://localhost:3000')
+await page.goto(process.env.APP_URL || 'http://localhost:3000')
 await page.waitForLoadState('networkidle')
 await page.waitForTimeout(800)
 

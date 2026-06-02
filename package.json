@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
+    "playwright": "^1.56.1",
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
