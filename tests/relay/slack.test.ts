@@ -78,7 +78,9 @@ describe('postToSlack', () => {
   })
 
   it('escapes mrkdwn special characters in the username', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(slackResponse({ ok: true, ts: '1.3' }))
+    vi.mocked(fetch).mockResolvedValueOnce(
+      slackResponse({ ok: true, ts: '1.3' }),
+    )
     await postToSlack(CONFIG, 'hello', { username: '*Admin* <@U123>' })
 
     const [, options] = vi.mocked(fetch).mock.calls[0]

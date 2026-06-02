@@ -211,7 +211,9 @@ describe('POST /api/messages', () => {
     })
 
     it('returns 400 when sessionId has an invalid format', async () => {
-      const res = await POST(makeRequest({ message: 'hello', sessionId: 'bad:format!' }))
+      const res = await POST(
+        makeRequest({ message: 'hello', sessionId: 'bad:format!' }),
+      )
       expect(res.status).toBe(400)
       const data = await res.json()
       expect(data.ok).toBe(false)
@@ -219,12 +221,16 @@ describe('POST /api/messages', () => {
     })
 
     it('returns 400 when sessionId is too long', async () => {
-      const res = await POST(makeRequest({ message: 'hello', sessionId: 'a'.repeat(100) }))
+      const res = await POST(
+        makeRequest({ message: 'hello', sessionId: 'a'.repeat(100) }),
+      )
       expect(res.status).toBe(400)
     })
 
     it('accepts a valid 12-char alphanumeric sessionId', async () => {
-      const res = await POST(makeRequest({ message: 'hello', sessionId: 'abc123abc123' }))
+      const res = await POST(
+        makeRequest({ message: 'hello', sessionId: 'abc123abc123' }),
+      )
       expect(res.status).toBe(200)
     })
 

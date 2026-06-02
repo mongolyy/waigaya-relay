@@ -27,7 +27,9 @@ export async function postToTeams(
     }
   }
 
-  const text = username ? `**${escapeTeamsMarkdown(username)}**: ${message}` : message
+  const text = username
+    ? `**${escapeTeamsMarkdown(username)}**: ${message}`
+    : message
   const payload = {
     '@type': 'MessageCard',
     '@context': 'https://schema.org/extensions',
