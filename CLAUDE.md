@@ -29,7 +29,7 @@ When a PR includes UI or frontend changes, the **Screenshots** section in the PR
 1. Start the dev server (`npm run dev`)
 2. Use Playwright (available at `node_modules/playwright`) with the pre-installed browser at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` to capture the UI:
    ```js
-   import { chromium } from '/home/user/waigaya-relay/node_modules/playwright/index.mjs';
+   import { chromium } from './node_modules/playwright/index.mjs';
    const browser = await chromium.launch({
      executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
      args: ['--no-sandbox', '--disable-setuid-sandbox'],
