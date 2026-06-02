@@ -4,6 +4,16 @@ import type { RelayResult } from '@/lib/types'
 /** Timeout in ms to avoid hanging indefinitely when Slack is unresponsive. */
 const SLACK_TIMEOUT_MS = 5000
 
+// Prevents mention injection (<@U…>, <!here>) and mrkdwn formatting injection
+// when a user-supplied name is embedded in a formatted message string.
+function escapeSlackMrkdwn(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/[*_~`]/g, (ch) => `\\${ch}`)
+}
+
 export interface SlackConfig {
   /** Bot token (`xoxb-…`). */
   token: string | undefined
@@ -44,7 +54,7 @@ export async function postToSlack(
     }
   }
 
-  const text = username ? `*${username}*: ${message}` : message
+  const text = username ? `*${escapeSlackMrkdwn(username)}*: ${message}` : message
 
   try {
     const res = await fetch(`${getSlackApiBaseUrl()}/chat.postMessage`, {
