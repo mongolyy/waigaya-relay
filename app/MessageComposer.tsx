@@ -54,7 +54,7 @@ function RelayStatusBadge({ result }: { result: RelayResult }) {
       </span>
       <span
         role="tooltip"
-        className="pointer-events-none absolute bottom-full right-0 mb-1.5 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-xs text-slate-200 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10"
+        className="pointer-events-none absolute bottom-full right-0 mb-1.5 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-xs text-slate-200 max-w-64 whitespace-normal break-words opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10"
       >
         {tooltip}
       </span>
@@ -607,28 +607,30 @@ export default function MessageComposer({
                   key={msg.id}
                   className="animate-message-in bg-slate-800 rounded-xl px-5 py-4 flex flex-col gap-3"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      {msg.username && (
-                        <>
-                          <UserAvatar name={msg.username} />
-                          <span
-                            className="text-xs font-semibold"
-                            style={{ color: getAvatarColor(msg.username) }}
-                          >
-                            {msg.username}
-                          </span>
-                        </>
+                  {(msg.username || msg.relayStatus) && (
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        {msg.username && (
+                          <>
+                            <UserAvatar name={msg.username} />
+                            <span
+                              className="text-xs font-semibold"
+                              style={{ color: getAvatarColor(msg.username) }}
+                            >
+                              {msg.username}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      {msg.relayStatus && (
+                        <div className="flex items-center gap-3 ml-auto">
+                          {msg.relayStatus.results.map((r) => (
+                            <RelayStatusBadge key={r.target} result={r} />
+                          ))}
+                        </div>
                       )}
                     </div>
-                    {msg.relayStatus && (
-                      <div className="flex items-center gap-3 ml-auto">
-                        {msg.relayStatus.results.map((r) => (
-                          <RelayStatusBadge key={r.target} result={r} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  )}
                   <p className="m-0 whitespace-pre-wrap break-words">
                     {msg.text}
                   </p>
