@@ -6,12 +6,17 @@ const SLACK_TIMEOUT_MS = 5000
 
 // Prevents mention injection (<@U…>, <!here>) and mrkdwn formatting injection
 // when a user-supplied name is embedded in a formatted message string.
+// Full-width Unicode replacements are used for formatting characters because
+// Slack's mrkdwn parser does not support backslash escaping for *, _, ~, `.
 function escapeSlackMrkdwn(text: string): string {
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/[*_~`]/g, (ch) => `\\${ch}`)
+    .replace(/\*/g, '＊')
+    .replace(/_/g, '＿')
+    .replace(/~/g, '～')
+    .replace(/`/g, '｀')
 }
 
 export interface SlackConfig {

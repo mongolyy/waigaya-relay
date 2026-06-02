@@ -86,8 +86,8 @@ describe('postToSlack', () => {
     const [, options] = vi.mocked(fetch).mock.calls[0]
     // biome-ignore lint/style/noNonNullAssertion: options is guaranteed by mock setup
     const { text } = JSON.parse(options!.body as string)
-    // * → \*,  < → &lt;,  > → &gt;
-    expect(text).toBe('*\\*Admin\\* &lt;@U123&gt;*: hello')
+    // * → ＊ (full-width),  < → &lt;,  > → &gt;
+    expect(text).toBe('*＊Admin＊ &lt;@U123&gt;*: hello')
   })
 
   it('includes thread_ts when posting into an existing thread', async () => {
