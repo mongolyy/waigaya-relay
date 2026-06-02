@@ -26,6 +26,8 @@ When creating or updating a PR description, follow `.github/PULL_REQUEST_TEMPLAT
 
 When subscribed to PR activity, always reply to every review comment — including bot comments (e.g., Gemini, CodeRabbit). Acknowledge the finding and briefly explain the decision taken (accepted, rejected with reason, or no action needed).
 
+When a reply reports that code was changed in response to the comment, reference the specific commit that made the change by its hash — not a vague phrase like "fixed in the latest commit". Prefer a linked short SHA (e.g. ``[`36b2cd0`](https://github.com/mongolyy/waigaya-relay/commit/36b2cd0)``) so the fix can be traced even after later commits, rebases, or once the PR is merged. This does not apply to replies that make no code change (e.g. rejected suggestions or "no action needed").
+
 After addressing a review comment, the resolution behavior depends on who left the comment:
 
 - **Bot reviewers** (e.g., Gemini, GitHub Copilot, Claude): automatically resolve the conversation after replying. Do NOT mention the bot to avoid infinite loops.
