@@ -139,7 +139,10 @@ describe('postToTeams', () => {
       .mockResolvedValueOnce(conversationResponse('conv-456'))
 
     // Both calls start before either resolves — the second must reuse the pending promise.
-    await Promise.all([postToTeams(CONFIG, 'first'), postToTeams(CONFIG, 'second')])
+    await Promise.all([
+      postToTeams(CONFIG, 'first'),
+      postToTeams(CONFIG, 'second'),
+    ])
 
     // 3 calls total: 1 token + 2 conversations (no second token fetch)
     expect(vi.mocked(fetch)).toHaveBeenCalledTimes(3)
