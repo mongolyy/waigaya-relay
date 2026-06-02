@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import HowToUseModal from './HowToUseModal'
 import type {
   GetMessagesResponse,
   PostMessageResponse,
@@ -113,6 +114,7 @@ export default function MessageComposer({
   onChangeUsername,
   initialCode,
 }: Props) {
+  const [showHowToUse, setShowHowToUse] = useState(false)
   const [phase, setPhase] = useState<'setup' | 'active'>(() =>
     findExistingCode(initialCode) ? 'active' : 'setup',
   )
@@ -341,12 +343,23 @@ export default function MessageComposer({
   if (phase === 'setup') {
     return (
       <main className="max-w-xl mx-auto py-12 px-5">
-        <header className="mb-8">
-          <h1 className="m-0 mb-2 text-3xl font-bold">waigaya-relay 📣</h1>
-          <p className="m-0 text-slate-400">
-            Post a message and relay it to Slack and Microsoft Teams to spark a
-            lively discussion.
-          </p>
+        {showHowToUse && <HowToUseModal onClose={() => setShowHowToUse(false)} />}
+        <header className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="m-0 mb-2 text-3xl font-bold">waigaya-relay 📣</h1>
+            <p className="m-0 text-slate-400">
+              Post a message and relay it to Slack and Microsoft Teams to spark a
+              lively discussion.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="shrink-0 flex flex-col items-center gap-0.5 mt-1 px-3 py-1.5 rounded-lg border border-slate-700 bg-transparent text-slate-400 text-xs cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors"
+            onClick={() => setShowHowToUse(true)}
+          >
+            ? How to use
+            <span className="text-[0.7rem] text-slate-500">使い方</span>
+          </button>
         </header>
 
         <div className="flex flex-col gap-4">
@@ -367,6 +380,7 @@ export default function MessageComposer({
 
   return (
     <main className="max-w-7xl mx-auto py-12 px-5">
+      {showHowToUse && <HowToUseModal onClose={() => setShowHowToUse(false)} />}
       <header className="mb-7 flex items-start justify-between gap-4">
         <div>
           <h1 className="m-0 mb-2 text-3xl font-bold">waigaya-relay 📣</h1>
@@ -375,101 +389,28 @@ export default function MessageComposer({
             lively discussion.
           </p>
         </div>
-        <button
-          type="button"
-          className="shrink-0 flex flex-col items-center gap-0.5 mt-1 px-3 py-1.5 rounded-lg border border-slate-700 bg-transparent text-slate-400 text-xs cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors"
-          onClick={handleLeave}
-        >
-          Leave
-          <span className="text-[0.7rem] text-slate-500">退出</span>
-        </button>
+        <div className="shrink-0 flex gap-2 mt-1">
+          <button
+            type="button"
+            className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-transparent text-slate-400 text-xs cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors"
+            onClick={() => setShowHowToUse(true)}
+          >
+            ? How to use
+            <span className="text-[0.7rem] text-slate-500">使い方</span>
+          </button>
+          <button
+            type="button"
+            className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-transparent text-slate-400 text-xs cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors"
+            onClick={handleLeave}
+          >
+            Leave
+            <span className="text-[0.7rem] text-slate-500">退出</span>
+          </button>
+        </div>
       </header>
 
       <div className="md:grid md:grid-cols-2 md:gap-6 md:items-start">
         <div>
-          <details className="mb-5 border border-slate-700 rounded-xl overflow-hidden group">
-            <summary className="px-4 py-3 cursor-pointer font-semibold text-sm text-slate-400 list-none flex items-center gap-2 select-none hover:text-slate-200 [&::-webkit-details-marker]:hidden">
-              <span className="text-[0.7rem] transition-transform duration-200 group-open:rotate-90 inline-block">
-                ▶
-              </span>
-              How to use
-            </summary>
-            <div className="px-5 pt-1 pb-4 border-t border-slate-700 text-sm">
-              <ol className="mt-3 mb-2 pl-5 flex flex-col gap-1 list-decimal">
-                <li>
-                  Enter a message and press <strong>Send</strong>
-                  <span className="block text-[0.85em] text-slate-400 mt-0.5">
-                    メッセージを入力して <strong>Send</strong> を押す
-                  </span>
-                </li>
-                <li>
-                  The message is posted simultaneously to all configured
-                  destinations (Slack and Microsoft Teams)
-                  <span className="block text-[0.85em] text-slate-400 mt-0.5">
-                    設定済みの送信先（Slack・Microsoft Teams）に同時に投稿される
-                  </span>
-                </li>
-                <li>
-                  Results are displayed in the message log
-                  <span className="block text-[0.85em] text-slate-400 mt-0.5">
-                    送信結果はメッセージログに表示される
-                  </span>
-                </li>
-              </ol>
-              <ul className="mt-2 pl-5 text-slate-400 flex flex-col gap-1 list-disc">
-                <li>
-                  Maximum 4,000 characters
-                  <span className="block text-[0.85em] mt-0.5">
-                    メッセージは最大 4,000 文字
-                  </span>
-                </li>
-                <li>
-                  Configure Slack via{' '}
-                  <code className="bg-slate-900 px-1 py-0.5 rounded text-[0.85em] text-slate-200">
-                    SLACK_BOT_TOKEN
-                  </code>{' '}
-                  /{' '}
-                  <code className="bg-slate-900 px-1 py-0.5 rounded text-[0.85em] text-slate-200">
-                    SLACK_CHANNEL_ID
-                  </code>{' '}
-                  and Teams via{' '}
-                  <code className="bg-slate-900 px-1 py-0.5 rounded text-[0.85em] text-slate-200">
-                    TEAMS_WEBHOOK_URL
-                  </code>
-                  <span className="block text-[0.85em] mt-0.5">
-                    Slack は{' '}
-                    <code className="bg-slate-900 px-1 py-0.5 rounded text-[0.85em] text-slate-200">
-                      SLACK_BOT_TOKEN
-                    </code>{' '}
-                    /{' '}
-                    <code className="bg-slate-900 px-1 py-0.5 rounded text-[0.85em] text-slate-200">
-                      SLACK_CHANNEL_ID
-                    </code>
-                    、Teams は{' '}
-                    <code className="bg-slate-900 px-1 py-0.5 rounded text-[0.85em] text-slate-200">
-                      TEAMS_WEBHOOK_URL
-                    </code>{' '}
-                    で設定
-                  </span>
-                </li>
-                <li>
-                  Each chat-log session posts into its own thread; use{' '}
-                  <strong>Start new thread</strong> to begin a fresh one
-                  <span className="block text-[0.85em] mt-0.5">
-                    セッションごとに別スレッドへ投稿。
-                    <strong>Start new thread</strong> で新しいスレッドを開始
-                  </span>
-                </li>
-                <li>
-                  Unconfigured destinations are shown as <em>skipped</em>
-                  <span className="block text-[0.85em] mt-0.5">
-                    未設定の送信先は <em>skipped</em> と表示される
-                  </span>
-                </li>
-              </ul>
-            </div>
-          </details>
-
           {unconfigured.length > 0 && (
             <div
               className="mb-3 px-4 py-3 rounded-lg font-semibold bg-yellow-500/15 text-yellow-500"
