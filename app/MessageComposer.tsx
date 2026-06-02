@@ -366,7 +366,7 @@ export default function MessageComposer({
   }
 
   return (
-    <main className="max-w-5xl mx-auto py-12 px-5">
+    <main className="max-w-7xl mx-auto py-12 px-5">
       <header className="mb-7 flex items-start justify-between gap-4">
         <div>
           <h1 className="m-0 mb-2 text-3xl font-bold">waigaya-relay 📣</h1>
