@@ -43,7 +43,7 @@ async function getBotToken(
   appId: string,
   appPassword: string,
 ): Promise<string> {
-  if (tokenPromise && Date.now() < tokenExpiresAt) {
+  if (tokenPromise && (tokenExpiresAt === 0 || Date.now() < tokenExpiresAt)) {
     return tokenPromise
   }
 

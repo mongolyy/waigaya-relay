@@ -132,6 +132,19 @@ describe('postToTeams', () => {
     expect(vi.mocked(fetch)).toHaveBeenCalledTimes(3)
   })
 
+  it('does not fire a second token request when two calls race concurrently', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(tokenResponse())
+      .mockResolvedValueOnce(conversationResponse())
+      .mockResolvedValueOnce(conversationResponse('conv-456'))
+
+    // Both calls start before either resolves — the second must reuse the pending promise.
+    await Promise.all([postToTeams(CONFIG, 'first'), postToTeams(CONFIG, 'second')])
+
+    // 3 calls total: 1 token + 2 conversations (no second token fetch)
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(3)
+  })
+
   it('prepends username in bold to the message text', async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(tokenResponse())
