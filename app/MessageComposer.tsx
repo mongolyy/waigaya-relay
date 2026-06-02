@@ -35,19 +35,17 @@ function getAvatarColor(name: string): string {
   return AVATAR_COLORS[hash % AVATAR_COLORS.length]
 }
 
-export function relayStatusTooltip(result: RelayResult): string {
-  if (result.skipped) return 'skipped (not configured)'
-  if (result.ok) return 'success'
-  return `failed${result.detail ? ` — ${result.detail}` : ''}`
-}
-
 function RelayStatusBadge({ result }: { result: RelayResult }) {
   const dotColor = result.skipped
     ? 'bg-slate-400'
     : result.ok
       ? 'bg-green-500'
       : 'bg-red-500'
-  const tooltip = relayStatusTooltip(result)
+  const tooltip = result.skipped
+    ? 'skipped (not configured)'
+    : result.ok
+      ? 'success'
+      : `failed${result.detail ? ` — ${result.detail}` : ''}`
 
   return (
     <div className="relative group inline-flex items-center gap-1.5 cursor-default">
