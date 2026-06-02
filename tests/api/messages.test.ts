@@ -7,6 +7,7 @@ vi.mock('@/lib/config', () => ({
   getTeamsBotAppPassword: vi.fn(() => 'test-password'),
   getTeamsBotTenantId: vi.fn(() => 'test-tenant'),
   getTeamsChannelId: vi.fn(() => '19:test@thread.tacv2'),
+  getTeamsWebhookUrl: vi.fn(() => undefined),
 }))
 
 vi.mock('@/lib/relay/slack', () => ({

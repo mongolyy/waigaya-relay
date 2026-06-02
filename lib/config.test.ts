@@ -7,6 +7,7 @@ import {
   getTeamsBotLoginUrl,
   getTeamsBotServiceUrl,
   getTeamsChannelId,
+  getTeamsWebhookUrl,
   isSlackConfigured,
   isTeamsConfigured,
 } from '@/lib/config'
@@ -99,8 +100,20 @@ describe('getTeamsBotLoginUrl', () => {
   })
 })
 
+describe('getTeamsWebhookUrl', () => {
+  it('returns the configured webhook URL', () => {
+    vi.stubEnv('TEAMS_WEBHOOK_URL', 'https://example.webhook.office.com/xyz')
+    expect(getTeamsWebhookUrl()).toBe('https://example.webhook.office.com/xyz')
+  })
+
+  it('returns undefined when unset', () => {
+    vi.stubEnv('TEAMS_WEBHOOK_URL', '')
+    expect(getTeamsWebhookUrl()).toBeUndefined()
+  })
+})
+
 describe('isTeamsConfigured', () => {
-  it('is true when all four fields are set', () => {
+  it('is true when all Bot fields are set', () => {
     vi.stubEnv('TEAMS_BOT_APP_ID', 'app-id')
     vi.stubEnv('TEAMS_BOT_APP_PASSWORD', 'password')
     vi.stubEnv('TEAMS_BOT_TENANT_ID', 'tenant-id')
@@ -108,11 +121,21 @@ describe('isTeamsConfigured', () => {
     expect(isTeamsConfigured()).toBe(true)
   })
 
-  it('is false when any field is missing', () => {
+  it('is true when only the webhook URL is set', () => {
+    vi.stubEnv('TEAMS_BOT_APP_ID', '')
+    vi.stubEnv('TEAMS_BOT_APP_PASSWORD', '')
+    vi.stubEnv('TEAMS_BOT_TENANT_ID', '')
+    vi.stubEnv('TEAMS_CHANNEL_ID', '')
+    vi.stubEnv('TEAMS_WEBHOOK_URL', 'https://example.webhook.office.com/xyz')
+    expect(isTeamsConfigured()).toBe(true)
+  })
+
+  it('is false when neither Bot fields nor webhook URL are set', () => {
     vi.stubEnv('TEAMS_BOT_APP_ID', '')
     vi.stubEnv('TEAMS_BOT_APP_PASSWORD', 'password')
     vi.stubEnv('TEAMS_BOT_TENANT_ID', 'tenant-id')
     vi.stubEnv('TEAMS_CHANNEL_ID', '19:abc@thread.tacv2')
+    vi.stubEnv('TEAMS_WEBHOOK_URL', '')
     expect(isTeamsConfigured()).toBe(false)
   })
 })

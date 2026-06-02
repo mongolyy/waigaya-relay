@@ -8,6 +8,8 @@ export interface TeamsConfig {
   appPassword: string | undefined
   tenantId: string | undefined
   channelId: string | undefined
+  /** Incoming Webhook URL — used as fallback when Bot config is incomplete. */
+  webhookUrl?: string | undefined
 }
 
 export interface TeamsPostOptions {
@@ -36,6 +38,16 @@ function escapeUsername(text: string): string {
     .replace(/_/g, '＿')
     .replace(/~/g, '～')
     .replace(/`/g, '｀')
+}
+
+// HTML-encodes username for MessageCard (Incoming Webhook) payloads, which
+// render HTML rather than Markdown.
+function escapeWebhookUsername(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/[*_~`[\]]/g, (ch) => `\\${ch}`)
 }
 
 async function getBotToken(
@@ -92,16 +104,57 @@ async function getBotToken(
  * provided the message is posted as a reply within that thread.
  */
 export async function postToTeams(
-  { appId, appPassword, tenantId, channelId }: TeamsConfig,
+  { appId, appPassword, tenantId, channelId, webhookUrl }: TeamsConfig,
   message: string,
   { conversationId, username }: TeamsPostOptions = {},
 ): Promise<RelayResult> {
-  if (!appId || !appPassword || !tenantId || !channelId) {
+  const botConfigured = !!(appId && appPassword && tenantId && channelId)
+
+  if (!botConfigured && !webhookUrl) {
     return {
       target: 'teams',
       ok: false,
       skipped: true,
-      detail: 'Teams Bot is not configured — Teams relay skipped.',
+      detail: 'Teams is not configured — Teams relay skipped.',
+    }
+  }
+
+  // Webhook fallback: Incoming Webhook does not support threading.
+  if (!botConfigured && webhookUrl) {
+    const webhookText = username
+      ? `**${escapeWebhookUsername(username)}**: ${message}`
+      : message
+    try {
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          '@type': 'MessageCard',
+          '@context': 'http://schema.org/extensions',
+          summary: webhookText,
+          text: webhookText,
+        }),
+        signal: AbortSignal.timeout(BOT_TIMEOUT_MS),
+      })
+      if (!res.ok) {
+        const rawBody = await res.text().catch(() => '')
+        const body =
+          rawBody.length > 200 ? `${rawBody.substring(0, 200)}...` : rawBody
+        return {
+          target: 'teams',
+          ok: false,
+          skipped: false,
+          detail: `Teams post failed (HTTP ${res.status})${body ? `: ${body}` : ''}`,
+        }
+      }
+      return { target: 'teams', ok: true, skipped: false }
+    } catch (err) {
+      const isTimeout = err instanceof Error && err.name === 'TimeoutError'
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      const detail = isTimeout
+        ? `Teams post timed out (${BOT_TIMEOUT_MS}ms).`
+        : `Teams post failed: ${errorMessage}`
+      return { target: 'teams', ok: false, skipped: false, detail }
     }
   }
 

@@ -6,6 +6,7 @@ import {
   getTeamsBotAppPassword,
   getTeamsBotTenantId,
   getTeamsChannelId,
+  getTeamsWebhookUrl,
 } from '@/lib/config'
 import { postToSlack } from '@/lib/relay/slack'
 import { postToTeams } from '@/lib/relay/teams'
@@ -81,6 +82,7 @@ export async function relayMessage(
         appPassword: getTeamsBotAppPassword(),
         tenantId: getTeamsBotTenantId(),
         channelId: getTeamsChannelId(),
+        webhookUrl: getTeamsWebhookUrl(),
       },
       message,
       { conversationId: teamsThreadId, username },

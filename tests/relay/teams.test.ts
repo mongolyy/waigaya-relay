@@ -45,15 +45,79 @@ describe('postToTeams', () => {
     vi.unstubAllGlobals()
   })
 
-  it('returns skipped when any required config field is missing', async () => {
+  it('returns skipped when neither Bot config nor webhookUrl is set', async () => {
     const result = await postToTeams({ ...CONFIG, appId: undefined }, 'hello')
     expect(result).toEqual({
       target: 'teams',
       ok: false,
       skipped: true,
-      detail: 'Teams Bot is not configured — Teams relay skipped.',
+      detail: 'Teams is not configured — Teams relay skipped.',
     })
     expect(fetch).not.toHaveBeenCalled()
+  })
+
+  describe('webhook fallback (Bot config incomplete)', () => {
+    const WEBHOOK_URL = 'https://example.webhook.office.com/xyz'
+    const WEBHOOK_CONFIG = {
+      appId: undefined,
+      appPassword: undefined,
+      tenantId: undefined,
+      channelId: undefined,
+      webhookUrl: WEBHOOK_URL,
+    }
+
+    it('returns ok:true when the webhook accepts the request', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce(new Response('', { status: 200 }))
+      const result = await postToTeams(WEBHOOK_CONFIG, 'hello')
+      expect(result).toEqual({ target: 'teams', ok: true, skipped: false })
+    })
+
+    it('POSTs a MessageCard to the webhook URL', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce(new Response('', { status: 200 }))
+      await postToTeams(WEBHOOK_CONFIG, 'hello')
+      const [url, opts] = vi.mocked(fetch).mock.calls[0]
+      expect(url).toBe(WEBHOOK_URL)
+      // biome-ignore lint/style/noNonNullAssertion: opts is guaranteed by mock setup
+      const body = JSON.parse(opts!.body as string)
+      expect(body['@type']).toBe('MessageCard')
+      expect(body.text).toBe('hello')
+    })
+
+    it('prepends username in webhook mode with HTML escaping', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce(new Response('', { status: 200 }))
+      await postToTeams(WEBHOOK_CONFIG, 'hello', { username: '<Alice>' })
+      const [, opts] = vi.mocked(fetch).mock.calls[0]
+      // biome-ignore lint/style/noNonNullAssertion: opts is guaranteed by mock setup
+      const body = JSON.parse(opts!.body as string)
+      expect(body.text).toBe('**&lt;Alice&gt;**: hello')
+    })
+
+    it('returns ok:false with HTTP status on non-2xx webhook response', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce(
+        new Response('Forbidden', { status: 403 }),
+      )
+      const result = await postToTeams(WEBHOOK_CONFIG, 'hello')
+      expect(result).toMatchObject({
+        target: 'teams',
+        ok: false,
+        skipped: false,
+        detail: expect.stringContaining('HTTP 403'),
+      })
+    })
+
+    it('returns a timeout detail on TimeoutError in webhook mode', async () => {
+      const err = Object.assign(new Error('signal timed out'), {
+        name: 'TimeoutError',
+      })
+      vi.mocked(fetch).mockRejectedValueOnce(err)
+      const result = await postToTeams(WEBHOOK_CONFIG, 'hello')
+      expect(result).toMatchObject({
+        target: 'teams',
+        ok: false,
+        skipped: false,
+        detail: expect.stringContaining('timed out'),
+      })
+    })
   })
 
   it('returns ok:true and a conversationId when starting a new thread', async () => {

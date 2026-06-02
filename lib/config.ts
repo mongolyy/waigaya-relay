@@ -34,6 +34,11 @@ export function isSlackConfigured(): boolean {
   return !!getSlackBotToken() && !!getSlackChannelId()
 }
 
+/** Microsoft Teams Incoming Webhook URL (legacy, no threading). */
+export function getTeamsWebhookUrl(): string | undefined {
+  return readOptional('TEAMS_WEBHOOK_URL')
+}
+
 /** Azure AD App ID for the Teams Bot. */
 export function getTeamsBotAppId(): string | undefined {
   return readOptional('TEAMS_BOT_APP_ID')
@@ -77,12 +82,12 @@ export function getTeamsBotLoginUrl(): string {
   return url.replace(/\/+$/, '')
 }
 
-/** True when the Teams Bot relay is fully configured. */
+/** True when at least one Teams relay mode is configured (Bot or Webhook). */
 export function isTeamsConfigured(): boolean {
-  return (
+  const botConfigured =
     !!getTeamsBotAppId() &&
     !!getTeamsBotAppPassword() &&
     !!getTeamsBotTenantId() &&
     !!getTeamsChannelId()
-  )
+  return botConfigured || !!getTeamsWebhookUrl()
 }
