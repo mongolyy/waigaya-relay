@@ -49,7 +49,9 @@ function RelayStatusBadge({ result }: { result: RelayResult }) {
   return (
     <div className="relative group inline-flex items-center gap-1.5 cursor-default">
       <span className={`size-2 rounded-full shrink-0 ${dotColor}`} />
-      <span className="text-xs text-slate-400">{TARGET_LABEL[result.target]}</span>
+      <span className="text-xs text-slate-400">
+        {TARGET_LABEL[result.target]}
+      </span>
       <span
         role="tooltip"
         className="pointer-events-none absolute bottom-full right-0 mb-1.5 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-xs text-slate-200 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10"
