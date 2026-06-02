@@ -130,7 +130,10 @@ describe('relayMessage', () => {
         { threadTs: undefined, username: undefined },
       )
       expect(postToTeams).toHaveBeenCalledWith(
-        expect.objectContaining({ appId: 'test-app-id', webhookUrl: undefined }),
+        expect.objectContaining({
+          appId: 'test-app-id',
+          webhookUrl: undefined,
+        }),
         'hello',
         { conversationId: undefined, username: undefined },
       )

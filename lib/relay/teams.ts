@@ -163,7 +163,8 @@ export async function postToTeams(
     : message
 
   try {
-    const token = await getBotToken(tenantId, appId, appPassword)
+    // biome-ignore lint/style/noNonNullAssertion: botConfigured guard above ensures these are defined
+    const token = await getBotToken(tenantId!, appId!, appPassword!)
     const serviceUrl = getTeamsBotServiceUrl()
 
     if (!conversationId) {
