@@ -54,7 +54,9 @@ export async function postToSlack(
     }
   }
 
-  const text = username ? `*${escapeSlackMrkdwn(username)}*: ${message}` : message
+  const text = username
+    ? `*${escapeSlackMrkdwn(username)}*: ${message}`
+    : message
 
   try {
     const res = await fetch(`${getSlackApiBaseUrl()}/chat.postMessage`, {
