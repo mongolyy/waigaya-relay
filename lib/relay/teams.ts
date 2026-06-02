@@ -79,11 +79,16 @@ async function getBotToken(
         throw new Error(`Bot token request failed (HTTP ${res.status})`)
       }
       const data = (await res.json()) as {
-        access_token: string
-        expires_in: number
+        access_token?: string
+        expires_in?: number
       }
+      if (!data.access_token) {
+        throw new Error('OAuth response did not contain an access_token')
+      }
+      const expiresIn =
+        typeof data.expires_in === 'number' ? data.expires_in : 3600
       // Subtract a 60-second buffer so the token is refreshed before it actually expires.
-      tokenExpiresAt = Date.now() + (data.expires_in - 60) * 1000
+      tokenExpiresAt = Date.now() + (expiresIn - 60) * 1000
       return data.access_token
     } catch (err) {
       tokenPromise = null
@@ -207,7 +212,7 @@ export async function postToTeams(
 
     // Reply into the existing conversation thread.
     const res = await fetch(
-      `${serviceUrl}/v3/conversations/${conversationId}/activities`,
+      `${serviceUrl}/v3/conversations/${encodeURIComponent(conversationId)}/activities`,
       {
         method: 'POST',
         headers: {

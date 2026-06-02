@@ -183,6 +183,52 @@ describe('postToTeams', () => {
     expect(body.text).toBe('reply text')
   })
 
+  it('URL-encodes the conversationId in the activities path', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(tokenResponse())
+      .mockResolvedValueOnce(activityResponse())
+
+    await postToTeams(CONFIG, 'reply', {
+      conversationId: '19:abc@thread.tacv2',
+    })
+
+    const [url] = vi.mocked(fetch).mock.calls[1]
+    expect(url).toBe(
+      'https://test-service/v3/conversations/19%3Aabc%40thread.tacv2/activities',
+    )
+  })
+
+  it('throws when the OAuth response is missing access_token', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ expires_in: 3600 }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+
+    const result = await postToTeams(CONFIG, 'hello')
+    expect(result).toMatchObject({
+      target: 'teams',
+      ok: false,
+      skipped: false,
+      detail: expect.stringContaining('access_token'),
+    })
+  })
+
+  it('defaults expires_in to 3600 when missing from the OAuth response', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ access_token: 'tok' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(conversationResponse())
+
+    const result = await postToTeams(CONFIG, 'hello')
+    expect(result.ok).toBe(true)
+  })
+
   it('reuses the cached token on a second call', async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(tokenResponse())
