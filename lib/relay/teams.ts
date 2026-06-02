@@ -3,6 +3,17 @@ import type { RelayResult } from '@/lib/types'
 /** Timeout in ms to avoid hanging indefinitely when the webhook is unresponsive. */
 const WEBHOOK_TIMEOUT_MS = 5000
 
+// Prevents HTML injection and formatting injection when a user-supplied name
+// is embedded in a MessageCard string. Teams MessageCards render HTML, so
+// &, < and > must be entity-encoded in addition to markdown characters.
+function escapeTeamsMarkdown(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/[*_~`[\]]/g, (ch) => `\\${ch}`)
+}
+
 /**
  * Post a message to the Microsoft Teams Incoming Webhook (MessageCard format).
  * The posted message appears in the channel and serves as the thread starter.
@@ -21,7 +32,9 @@ export async function postToTeams(
     }
   }
 
-  const text = username ? `**${username}**: ${message}` : message
+  const text = username
+    ? `**${escapeTeamsMarkdown(username)}**: ${message}`
+    : message
   const payload = {
     '@type': 'MessageCard',
     '@context': 'https://schema.org/extensions',

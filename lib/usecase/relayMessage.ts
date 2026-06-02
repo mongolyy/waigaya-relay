@@ -12,6 +12,7 @@ import type { PostMessageResponse, RelayResult } from '@/lib/types'
 
 const MAX_MESSAGE_LENGTH = 4000
 const MAX_USERNAME_LENGTH = 80
+const SESSION_ID_PATTERN = /^[a-z0-9]{12}$/
 
 export type RelayMessageInput = {
   message: unknown
@@ -51,8 +52,12 @@ export async function relayMessage(
     }
   }
 
-  const sessionId =
+  const rawSessionId =
     typeof input.sessionId === 'string' ? input.sessionId.trim() : ''
+  if (rawSessionId && !SESSION_ID_PATTERN.test(rawSessionId)) {
+    return { kind: 'validation_error', error: 'Invalid sessionId format.' }
+  }
+  const sessionId = rawSessionId
 
   const messageId = randomUUID()
   await createMessage(sessionId || 'default', messageId, message, username)

@@ -210,6 +210,30 @@ describe('POST /api/messages', () => {
       )
     })
 
+    it('returns 400 when sessionId has an invalid format', async () => {
+      const res = await POST(
+        makeRequest({ message: 'hello', sessionId: 'bad:format!' }),
+      )
+      expect(res.status).toBe(400)
+      const data = await res.json()
+      expect(data.ok).toBe(false)
+      expect(data.error).toContain('sessionId')
+    })
+
+    it('returns 400 when sessionId is too long', async () => {
+      const res = await POST(
+        makeRequest({ message: 'hello', sessionId: 'a'.repeat(100) }),
+      )
+      expect(res.status).toBe(400)
+    })
+
+    it('accepts a valid 12-char alphanumeric sessionId', async () => {
+      const res = await POST(
+        makeRequest({ message: 'hello', sessionId: 'abc123abc123' }),
+      )
+      expect(res.status).toBe(200)
+    })
+
     it('returns 400 when username exceeds 80 characters', async () => {
       const res = await POST(
         makeRequest({ message: 'hello', username: 'a'.repeat(81) }),
@@ -231,7 +255,7 @@ describe('POST /api/messages', () => {
   describe('session threading', () => {
     it('starts a new thread and saves its ts on the first post of a session', async () => {
       vi.mocked(getSessionThread).mockResolvedValueOnce(null)
-      await POST(makeRequest({ message: 'first', sessionId: 'sess-1' }))
+      await POST(makeRequest({ message: 'first', sessionId: 'aaaaaaaaaaaa' }))
 
       // No existing thread → Slack is called without a thread_ts.
       expect(postToSlack).toHaveBeenCalledWith(
@@ -240,7 +264,7 @@ describe('POST /api/messages', () => {
         expect.objectContaining({ threadTs: undefined }),
       )
       // The returned ts is persisted as the session's thread anchor.
-      expect(saveSessionThread).toHaveBeenCalledWith('sess-1', {
+      expect(saveSessionThread).toHaveBeenCalledWith('aaaaaaaaaaaa', {
         slackThreadTs: '1700000000.000100',
       })
     })
@@ -249,7 +273,7 @@ describe('POST /api/messages', () => {
       vi.mocked(getSessionThread).mockResolvedValueOnce({
         slackThreadTs: '1700000000.000100',
       })
-      await POST(makeRequest({ message: 'second', sessionId: 'sess-1' }))
+      await POST(makeRequest({ message: 'second', sessionId: 'aaaaaaaaaaaa' }))
 
       expect(postToSlack).toHaveBeenCalledWith(
         expect.any(Object),
@@ -263,7 +287,7 @@ describe('POST /api/messages', () => {
     it('does not save a thread when Slack fails on the first post', async () => {
       vi.mocked(getSessionThread).mockResolvedValueOnce(null)
       vi.mocked(postToSlack).mockResolvedValueOnce(FAILED_SLACK)
-      await POST(makeRequest({ message: 'first', sessionId: 'sess-2' }))
+      await POST(makeRequest({ message: 'first', sessionId: 'bbbbbbbbbbbb' }))
       expect(saveSessionThread).not.toHaveBeenCalled()
     })
 
