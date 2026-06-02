@@ -8,6 +8,8 @@ The goal is not just forwarding messages — it's about **sparking lively discus
 
 Built with Next.js (App Router) and ready to deploy on **Vercel**.
 
+![Demo](./docs/demo.gif)
+
 ---
 
 ## Features

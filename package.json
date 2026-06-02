@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "vitest run --config vitest.config.e2e.ts"
+    "test:e2e": "vitest run --config vitest.config.e2e.ts",
+    "record-demo": "node scripts/record-demo.mjs"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.0",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
+    "playwright": "^1.56.1",
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
