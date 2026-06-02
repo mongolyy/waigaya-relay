@@ -11,6 +11,8 @@ Slack / Teams 上でそのまま議論（スレッド）が始まります。
 
 Next.js（App Router）で実装しており、**Vercel にそのままデプロイ**できます。
 
+![デモ](./docs/demo.gif)
+
 ---
 
 ## 主な機能
