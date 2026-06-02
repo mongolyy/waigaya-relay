@@ -517,7 +517,7 @@ export default function MessageComposer({
                   </span>
                 </button>
               </div>
-              {postedMessages.map((msg) => (
+              {[...postedMessages].reverse().map((msg) => (
                 <article
                   key={msg.id}
                   className="animate-message-in bg-slate-800 rounded-xl px-5 py-4 flex flex-col gap-3"
