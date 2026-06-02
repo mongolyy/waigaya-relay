@@ -1,7 +1,7 @@
-import { chromium } from 'playwright'
 import { mkdir } from 'node:fs/promises'
-import { resolve, dirname } from 'node:path'
+import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { chromium } from 'playwright'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const outDir = resolve(__dirname, '../docs')
@@ -56,9 +56,15 @@ await page.getByRole('button', { name: 'Send' }).click()
 await page.waitForTimeout(1200)
 
 // React with 👍
-await page.getByRole('button', { name: /React with 👍/ }).first().click()
+await page
+  .getByRole('button', { name: /React with 👍/ })
+  .first()
+  .click()
 await page.waitForTimeout(500)
-await page.getByRole('button', { name: /React with 🎉/ }).first().click()
+await page
+  .getByRole('button', { name: /React with 🎉/ })
+  .first()
+  .click()
 await page.waitForTimeout(800)
 
 // Send a second message
