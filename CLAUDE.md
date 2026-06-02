@@ -22,23 +22,6 @@ When new changes are pushed to a PR branch, update the PR title and description 
 
 When creating or updating a PR description, follow `.github/PULL_REQUEST_TEMPLATE.md` exactly — use only the sections defined there and do not add extra sections (e.g. do not add a "Changes" section).
 
-### Screenshots for UI changes
-
-When a PR includes UI or frontend changes, the **Screenshots** section in the PR description must be filled in with before/after screenshots. To take screenshots:
-
-1. Start the dev server (`npm run dev`)
-2. Use Playwright (available at `node_modules/playwright`) with the pre-installed browser at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` to capture the UI:
-   ```js
-   import { chromium } from './node_modules/playwright/index.mjs';
-   const browser = await chromium.launch({
-     executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-     args: ['--no-sandbox', '--disable-setuid-sandbox'],
-   });
-   ```
-3. Save screenshots to `.github/screenshots/` and commit them to the PR branch
-4. Reference them in the PR description with the raw GitHub URL:
-   `https://raw.githubusercontent.com/mongolyy/waigaya-relay/<branch>/.github/screenshots/<file>.png`
-
 ## Pull Request Review Comments
 
 When subscribed to PR activity, always reply to every review comment — including bot comments (e.g., Gemini, CodeRabbit). Acknowledge the finding and briefly explain the decision taken (accepted, rejected with reason, or no action needed).
