@@ -2,7 +2,10 @@ import { randomUUID } from 'node:crypto'
 import {
   getSlackBotToken,
   getSlackChannelId,
-  getTeamsWebhookUrl,
+  getTeamsBotAppId,
+  getTeamsBotAppPassword,
+  getTeamsBotTenantId,
+  getTeamsChannelId,
 } from '@/lib/config'
 import { postToSlack } from '@/lib/relay/slack'
 import { postToTeams } from '@/lib/relay/teams'
@@ -64,6 +67,7 @@ export async function relayMessage(
 
   const session = sessionId ? await getSessionThread(sessionId) : null
   const slackThreadTs = session?.slackThreadTs
+  const teamsThreadId = session?.teamsThreadId
 
   const results: RelayResult[] = await Promise.all([
     postToSlack(
@@ -71,13 +75,31 @@ export async function relayMessage(
       message,
       { threadTs: slackThreadTs, username },
     ),
-    postToTeams(getTeamsWebhookUrl(), message, username),
+    postToTeams(
+      {
+        appId: getTeamsBotAppId(),
+        appPassword: getTeamsBotAppPassword(),
+        tenantId: getTeamsBotTenantId(),
+        channelId: getTeamsChannelId(),
+      },
+      message,
+      { conversationId: teamsThreadId, username },
+    ),
   ])
 
-  if (sessionId && !slackThreadTs) {
+  if (sessionId) {
     const slack = results.find((r) => r.target === 'slack')
-    if (slack?.ok && slack.ts) {
-      await saveSessionThread(sessionId, { slackThreadTs: slack.ts })
+    const teams = results.find((r) => r.target === 'teams')
+    const newSlackTs = slackThreadTs ?? (slack?.ok ? slack.ts : undefined)
+    const newTeamsId =
+      teamsThreadId ?? (teams?.ok ? teams.conversationId : undefined)
+    const slackIsNew = !slackThreadTs && !!newSlackTs
+    const teamsIsNew = !teamsThreadId && !!newTeamsId
+    if (slackIsNew || teamsIsNew) {
+      await saveSessionThread(sessionId, {
+        ...(newSlackTs ? { slackThreadTs: newSlackTs } : {}),
+        ...(newTeamsId ? { teamsThreadId: newTeamsId } : {}),
+      })
     }
   }
 
