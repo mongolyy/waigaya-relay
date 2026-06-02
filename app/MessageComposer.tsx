@@ -35,6 +35,42 @@ function getAvatarColor(name: string): string {
   return AVATAR_COLORS[hash % AVATAR_COLORS.length]
 }
 
+function RelayStatusBadge({ result }: { result: RelayResult }) {
+  const dotColor = result.skipped
+    ? 'bg-slate-400'
+    : result.ok
+      ? 'bg-green-500'
+      : 'bg-red-500'
+  const tooltip = result.skipped
+    ? 'skipped (not configured)'
+    : result.ok
+      ? 'success'
+      : `failed${result.detail ? ` — ${result.detail}` : ''}`
+
+  return (
+    <div
+      className="relative group inline-flex items-center gap-1.5 cursor-default"
+      role="img"
+      aria-label={`${TARGET_LABEL[result.target]} relay: ${tooltip}`}
+    >
+      <span
+        className={`size-2 rounded-full shrink-0 ${dotColor}`}
+        aria-hidden="true"
+      />
+      <span className="text-xs text-slate-400" aria-hidden="true">
+        {TARGET_LABEL[result.target]}
+      </span>
+      <span
+        role="tooltip"
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-full right-0 mb-1.5 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-xs text-slate-200 max-w-64 whitespace-normal break-words opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10"
+      >
+        {tooltip}
+      </span>
+    </div>
+  )
+}
+
 function UserAvatar({ name }: { name: string }) {
   return (
     <span
@@ -522,52 +558,33 @@ export default function MessageComposer({
                   key={msg.id}
                   className="animate-message-in bg-slate-800 rounded-xl px-5 py-4 flex flex-col gap-3"
                 >
-                  {msg.username && (
-                    <div className="flex items-center gap-2">
-                      <UserAvatar name={msg.username} />
-                      <span
-                        className="text-xs font-semibold"
-                        style={{ color: getAvatarColor(msg.username) }}
-                      >
-                        {msg.username}
-                      </span>
+                  {(msg.username || msg.relayStatus) && (
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        {msg.username && (
+                          <>
+                            <UserAvatar name={msg.username} />
+                            <span
+                              className="text-xs font-semibold"
+                              style={{ color: getAvatarColor(msg.username) }}
+                            >
+                              {msg.username}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      {msg.relayStatus && (
+                        <div className="flex items-center gap-3 ml-auto">
+                          {msg.relayStatus.results.map((r) => (
+                            <RelayStatusBadge key={r.target} result={r} />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                   <p className="m-0 whitespace-pre-wrap break-words">
                     {msg.text}
                   </p>
-
-                  {msg.relayStatus && (
-                    <ul className="list-none m-0 p-0 flex flex-col gap-2">
-                      {msg.relayStatus.results.map((r) => (
-                        <li
-                          key={r.target}
-                          className="flex items-baseline gap-2.5 bg-slate-700/50 px-3.5 py-2.5 rounded-lg"
-                        >
-                          <span
-                            className={`size-2.5 rounded-full shrink-0 translate-y-px ${
-                              r.skipped
-                                ? 'bg-slate-400'
-                                : r.ok
-                                  ? 'bg-green-500'
-                                  : 'bg-red-500'
-                            }`}
-                          />
-                          <span className="font-semibold min-w-[7em]">
-                            {TARGET_LABEL[r.target]}
-                          </span>
-                          <span className="text-slate-400 text-sm">
-                            {r.skipped
-                              ? 'skipped (not configured)'
-                              : r.ok
-                                ? 'success'
-                                : 'failed'}
-                            {r.detail && !r.skipped ? ` — ${r.detail}` : ''}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
 
                   <div className="flex flex-wrap gap-1.5">
                     {PRESET_EMOJIS.map((emoji) => {
