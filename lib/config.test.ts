@@ -3,8 +3,12 @@ import {
   getSlackApiBaseUrl,
   getSlackBotToken,
   getSlackChannelId,
-  getTeamsWebhookUrl,
+  getTeamsBotAppId,
+  getTeamsBotLoginUrl,
+  getTeamsBotServiceUrl,
+  getTeamsChannelId,
   isSlackConfigured,
+  isTeamsConfigured,
 } from '@/lib/config'
 
 afterEach(() => {
@@ -45,15 +49,71 @@ describe('getSlackChannelId', () => {
   })
 })
 
-describe('getTeamsWebhookUrl', () => {
-  it('returns the configured webhook url', () => {
-    vi.stubEnv('TEAMS_WEBHOOK_URL', 'https://outlook.office.com/x')
-    expect(getTeamsWebhookUrl()).toBe('https://outlook.office.com/x')
+describe('getTeamsBotAppId', () => {
+  it('returns the configured app id', () => {
+    vi.stubEnv('TEAMS_BOT_APP_ID', 'app-123')
+    expect(getTeamsBotAppId()).toBe('app-123')
   })
 
   it('returns undefined when unset', () => {
-    vi.stubEnv('TEAMS_WEBHOOK_URL', '')
-    expect(getTeamsWebhookUrl()).toBeUndefined()
+    vi.stubEnv('TEAMS_BOT_APP_ID', '')
+    expect(getTeamsBotAppId()).toBeUndefined()
+  })
+})
+
+describe('getTeamsChannelId', () => {
+  it('returns the configured channel id', () => {
+    vi.stubEnv('TEAMS_CHANNEL_ID', '19:abc@thread.tacv2')
+    expect(getTeamsChannelId()).toBe('19:abc@thread.tacv2')
+  })
+
+  it('returns undefined when unset', () => {
+    vi.stubEnv('TEAMS_CHANNEL_ID', '')
+    expect(getTeamsChannelId()).toBeUndefined()
+  })
+})
+
+describe('getTeamsBotServiceUrl', () => {
+  it('defaults to the Teams Bot Framework service URL', () => {
+    vi.stubEnv('TEAMS_BOT_SERVICE_URL', '')
+    expect(getTeamsBotServiceUrl()).toBe(
+      'https://smba.trafficmanager.net/teams',
+    )
+  })
+
+  it('returns the override when configured', () => {
+    vi.stubEnv('TEAMS_BOT_SERVICE_URL', 'http://localhost:19999/teams-service')
+    expect(getTeamsBotServiceUrl()).toBe('http://localhost:19999/teams-service')
+  })
+})
+
+describe('getTeamsBotLoginUrl', () => {
+  it('defaults to the Microsoft login endpoint', () => {
+    vi.stubEnv('TEAMS_BOT_LOGIN_URL', '')
+    expect(getTeamsBotLoginUrl()).toBe('https://login.microsoftonline.com')
+  })
+
+  it('returns the override when configured', () => {
+    vi.stubEnv('TEAMS_BOT_LOGIN_URL', 'http://localhost:19999/teams-login')
+    expect(getTeamsBotLoginUrl()).toBe('http://localhost:19999/teams-login')
+  })
+})
+
+describe('isTeamsConfigured', () => {
+  it('is true when all four fields are set', () => {
+    vi.stubEnv('TEAMS_BOT_APP_ID', 'app-id')
+    vi.stubEnv('TEAMS_BOT_APP_PASSWORD', 'password')
+    vi.stubEnv('TEAMS_BOT_TENANT_ID', 'tenant-id')
+    vi.stubEnv('TEAMS_CHANNEL_ID', '19:abc@thread.tacv2')
+    expect(isTeamsConfigured()).toBe(true)
+  })
+
+  it('is false when any field is missing', () => {
+    vi.stubEnv('TEAMS_BOT_APP_ID', '')
+    vi.stubEnv('TEAMS_BOT_APP_PASSWORD', 'password')
+    vi.stubEnv('TEAMS_BOT_TENANT_ID', 'tenant-id')
+    vi.stubEnv('TEAMS_CHANNEL_ID', '19:abc@thread.tacv2')
+    expect(isTeamsConfigured()).toBe(false)
   })
 })
 

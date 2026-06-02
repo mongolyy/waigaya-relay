@@ -17,13 +17,14 @@ export interface TeamsPostOptions {
   username?: string
 }
 
-// Module-level token cache — reused across calls until expiry.
-let cachedToken: string | null = null
+// Module-level token promise cache — reused across concurrent and subsequent
+// calls until expiry, preventing duplicate token requests under load.
+let tokenPromise: Promise<string> | null = null
 let tokenExpiresAt = 0
 
 /** Test helper: clears the cached Bot Framework access token. */
 export function _resetTokenCacheForTests(): void {
-  cachedToken = null
+  tokenPromise = null
   tokenExpiresAt = 0
 }
 
@@ -42,34 +43,44 @@ async function getBotToken(
   appId: string,
   appPassword: string,
 ): Promise<string> {
-  if (cachedToken && Date.now() < tokenExpiresAt) {
-    return cachedToken
+  if (tokenPromise && Date.now() < tokenExpiresAt) {
+    return tokenPromise
   }
-  const res = await fetch(
-    `${getTeamsBotLoginUrl()}/${tenantId}/oauth2/v2.0/token`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'client_credentials',
-        client_id: appId,
-        client_secret: appPassword,
-        scope: 'https://api.botframework.com/.default',
-      }).toString(),
-      signal: AbortSignal.timeout(BOT_TIMEOUT_MS),
-    },
-  )
-  if (!res.ok) {
-    throw new Error(`Bot token request failed (HTTP ${res.status})`)
-  }
-  const data = (await res.json()) as {
-    access_token: string
-    expires_in: number
-  }
-  cachedToken = data.access_token
-  // Subtract a 60-second buffer so the token is refreshed before it actually expires.
-  tokenExpiresAt = Date.now() + (data.expires_in - 60) * 1000
-  return cachedToken
+
+  tokenPromise = (async () => {
+    try {
+      const res = await fetch(
+        `${getTeamsBotLoginUrl()}/${tenantId}/oauth2/v2.0/token`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'client_credentials',
+            client_id: appId,
+            client_secret: appPassword,
+            scope: 'https://api.botframework.com/.default',
+          }).toString(),
+          signal: AbortSignal.timeout(BOT_TIMEOUT_MS),
+        },
+      )
+      if (!res.ok) {
+        throw new Error(`Bot token request failed (HTTP ${res.status})`)
+      }
+      const data = (await res.json()) as {
+        access_token: string
+        expires_in: number
+      }
+      // Subtract a 60-second buffer so the token is refreshed before it actually expires.
+      tokenExpiresAt = Date.now() + (data.expires_in - 60) * 1000
+      return data.access_token
+    } catch (err) {
+      tokenPromise = null
+      tokenExpiresAt = 0
+      throw err
+    }
+  })()
+
+  return tokenPromise
 }
 
 /**
@@ -112,7 +123,7 @@ export async function postToTeams(
         },
         body: JSON.stringify({
           isGroup: true,
-          channelData: { channel: { id: channelId } },
+          channelData: { channel: { id: channelId }, tenant: { id: tenantId } },
           activity: { type: 'message', text },
           bot: { id: appId },
         }),

@@ -79,7 +79,8 @@ describe('postToTeams', () => {
 
     const [tokenUrl, tokenOpts] = vi.mocked(fetch).mock.calls[0]
     expect(tokenUrl).toBe('https://test-login/test-tenant/oauth2/v2.0/token')
-    expect((tokenOpts?.headers as Record<string, string>)['Content-Type']).toBe(
+    // biome-ignore lint/style/noNonNullAssertion: tokenOpts is guaranteed by mock setup
+    expect((tokenOpts!.headers as Record<string, string>)['Content-Type']).toBe(
       'application/x-www-form-urlencoded',
     )
 
@@ -89,9 +90,11 @@ describe('postToTeams', () => {
     const body = JSON.parse(convOpts!.body as string)
     expect(body.isGroup).toBe(true)
     expect(body.channelData.channel.id).toBe(CONFIG.channelId)
+    expect(body.channelData.tenant.id).toBe(CONFIG.tenantId)
     expect(body.activity.text).toBe('test message')
     expect(body.bot.id).toBe(CONFIG.appId)
-    expect((convOpts?.headers as Record<string, string>).Authorization).toBe(
+    // biome-ignore lint/style/noNonNullAssertion: convOpts is guaranteed by mock setup
+    expect((convOpts!.headers as Record<string, string>).Authorization).toBe(
       'Bearer test-token',
     )
   })

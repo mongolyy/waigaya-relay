@@ -60,10 +60,10 @@ export function getTeamsChannelId(): string | undefined {
  * server); defaults to the Teams-specific Bot Framework endpoint.
  */
 export function getTeamsBotServiceUrl(): string {
-  return (
+  const url =
     readOptional('TEAMS_BOT_SERVICE_URL') ??
     'https://smba.trafficmanager.net/teams'
-  )
+  return url.replace(/\/+$/, '')
 }
 
 /**
@@ -72,9 +72,9 @@ export function getTeamsBotServiceUrl(): string {
  * server); defaults to the real Microsoft login endpoint.
  */
 export function getTeamsBotLoginUrl(): string {
-  return (
+  const url =
     readOptional('TEAMS_BOT_LOGIN_URL') ?? 'https://login.microsoftonline.com'
-  )
+  return url.replace(/\/+$/, '')
 }
 
 /** True when the Teams Bot relay is fully configured. */
