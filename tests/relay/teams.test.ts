@@ -57,6 +57,27 @@ describe('postToTeams', () => {
     expect(payload.text).toBe('**Bob**: test message')
   })
 
+  it('escapes markdown special characters in the username', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('1', { status: 200 }))
+    await postToTeams(WEBHOOK_URL, 'hello', '**Bot**')
+
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    // biome-ignore lint/style/noNonNullAssertion: options is guaranteed by mock setup
+    const payload = JSON.parse(options!.body as string)
+    // ** → \*\* (each * escaped individually)
+    expect(payload.text).toBe('**\\*\\*Bot\\*\\***: hello')
+  })
+
+  it('HTML-encodes angle brackets and ampersands in the username', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('1', { status: 200 }))
+    await postToTeams(WEBHOOK_URL, 'hello', 'Bob <bob@example.com>')
+
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    // biome-ignore lint/style/noNonNullAssertion: options is guaranteed by mock setup
+    const payload = JSON.parse(options!.body as string)
+    expect(payload.text).toBe('**Bob &lt;bob@example.com&gt;**: hello')
+  })
+
   it('sends plain text when username is not provided', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response('1', { status: 200 }))
     await postToTeams(WEBHOOK_URL, 'test message')
