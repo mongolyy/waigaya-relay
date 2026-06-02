@@ -16,16 +16,22 @@ export default function HowToUseModal({ onClose }: Props) {
   }, [onClose])
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: Escape key is handled via useEffect above
+    // biome-ignore lint/a11y/noStaticElementInteractions: backdrop dismiss is a standard modal UX pattern
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="how-to-use-title"
         className="relative w-full max-w-lg bg-slate-800 rounded-2xl shadow-xl p-6 text-sm"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="m-0 text-base font-bold">
+          <h2 id="how-to-use-title" className="m-0 text-base font-bold">
             How to use
             <span className="ml-2 text-xs font-normal text-slate-400">
               使い方

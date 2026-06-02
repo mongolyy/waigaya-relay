@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import HowToUseModal from './HowToUseModal'
 import type {
   GetMessagesResponse,
   PostMessageResponse,
@@ -10,6 +9,7 @@ import type {
   RelayTarget,
   StoredMessage,
 } from '@/lib/types'
+import HowToUseModal from './HowToUseModal'
 
 const TARGET_LABEL: Record<RelayTarget, string> = {
   slack: 'Slack',
@@ -343,13 +343,15 @@ export default function MessageComposer({
   if (phase === 'setup') {
     return (
       <main className="max-w-xl mx-auto py-12 px-5">
-        {showHowToUse && <HowToUseModal onClose={() => setShowHowToUse(false)} />}
+        {showHowToUse && (
+          <HowToUseModal onClose={() => setShowHowToUse(false)} />
+        )}
         <header className="mb-8 flex items-start justify-between gap-4">
           <div>
             <h1 className="m-0 mb-2 text-3xl font-bold">waigaya-relay 📣</h1>
             <p className="m-0 text-slate-400">
-              Post a message and relay it to Slack and Microsoft Teams to spark a
-              lively discussion.
+              Post a message and relay it to Slack and Microsoft Teams to spark
+              a lively discussion.
             </p>
           </div>
           <button
