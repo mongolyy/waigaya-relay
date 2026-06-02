@@ -1,3 +1,10 @@
+// Records a demo GIF of the app and saves it to docs/demo.gif.
+// Run: npm run record-demo
+//
+// Environment variables:
+//   APP_URL          - URL of the running app (default: http://localhost:3000)
+//   CHROME_PATH      - Path to Chromium executable (default: Playwright's managed Chromium)
+//   PLAYWRIGHT_BROWSERS_PATH - Root directory of Playwright browser binaries
 import { mkdir } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
