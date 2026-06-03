@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 export function middleware(req: NextRequest) {
   const user = process.env.BASIC_AUTH_USER?.trim()
@@ -10,15 +10,19 @@ export function middleware(req: NextRequest) {
 
   const authHeader = req.headers.get('authorization')
   if (authHeader?.startsWith('Basic ')) {
-    const encoded = authHeader.slice(6)
-    const decoded = atob(encoded)
-    const colonIndex = decoded.indexOf(':')
-    if (colonIndex !== -1) {
-      const reqUser = decoded.slice(0, colonIndex)
-      const reqPassword = decoded.slice(colonIndex + 1)
-      if (reqUser === user && reqPassword === password) {
-        return NextResponse.next()
+    try {
+      const encoded = authHeader.slice(6)
+      const decoded = atob(encoded)
+      const colonIndex = decoded.indexOf(':')
+      if (colonIndex !== -1) {
+        const reqUser = decoded.slice(0, colonIndex)
+        const reqPassword = decoded.slice(colonIndex + 1)
+        if (reqUser === user && reqPassword === password) {
+          return NextResponse.next()
+        }
       }
+    } catch {
+      // Malformed base64 — fall through to 401
     }
   }
 

@@ -4,7 +4,7 @@ import { middleware } from '@/middleware'
 
 function makeRequest(authHeader?: string): NextRequest {
   const headers: Record<string, string> = {}
-  if (authHeader) headers['authorization'] = authHeader
+  if (authHeader) headers.authorization = authHeader
   return new NextRequest('http://localhost/', { headers })
 }
 
@@ -35,7 +35,9 @@ describe('middleware basic auth', () => {
     process.env.BASIC_AUTH_PASSWORD = 'secret'
     const res = middleware(makeRequest())
     expect(res.status).toBe(401)
-    expect(res.headers.get('WWW-Authenticate')).toBe('Basic realm="waigaya-relay"')
+    expect(res.headers.get('WWW-Authenticate')).toBe(
+      'Basic realm="waigaya-relay"',
+    )
   })
 
   it('returns 401 for wrong credentials', () => {
@@ -57,5 +59,12 @@ describe('middleware basic auth', () => {
     process.env.BASIC_AUTH_PASSWORD = 'pa:ss:word'
     const res = middleware(makeRequest(basicAuthHeader('alice', 'pa:ss:word')))
     expect(res.status).toBe(200)
+  })
+
+  it('returns 401 for malformed base64 in Authorization header', () => {
+    process.env.BASIC_AUTH_USER = 'alice'
+    process.env.BASIC_AUTH_PASSWORD = 'secret'
+    const res = middleware(makeRequest('Basic !!!invalid-base64!!!'))
+    expect(res.status).toBe(401)
   })
 })
