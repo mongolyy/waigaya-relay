@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('@/lib/config', () => ({
   getSlackBotToken: vi.fn(() => 'xoxb-test-token'),
   getSlackChannelId: vi.fn(() => 'C0TEST'),
-  getTeamsWebhookUrl: vi.fn(() => 'https://outlook.office.com/test'),
+  getTeamsBotAppId: vi.fn(() => 'test-app-id'),
+  getTeamsBotAppPassword: vi.fn(() => 'test-password'),
+  getTeamsBotTenantId: vi.fn(() => 'test-tenant'),
+  getTeamsChannelId: vi.fn(() => '19:test@thread.tacv2'),
+  getTeamsWebhookUrl: vi.fn(() => undefined),
 }))
 
 vi.mock('@/lib/relay/slack', () => ({
@@ -36,7 +40,12 @@ const SUCCESS_SLACK: RelayResult = {
   skipped: false,
   ts: '1700000000.000100',
 }
-const SUCCESS_TEAMS: RelayResult = { target: 'teams', ok: true, skipped: false }
+const SUCCESS_TEAMS: RelayResult = {
+  target: 'teams',
+  ok: true,
+  skipped: false,
+  conversationId: 'conv-123',
+}
 const SKIPPED_SLACK: RelayResult = { target: 'slack', ok: false, skipped: true }
 const SKIPPED_TEAMS: RelayResult = { target: 'teams', ok: false, skipped: true }
 const FAILED_SLACK: RelayResult = {
@@ -121,9 +130,12 @@ describe('relayMessage', () => {
         { threadTs: undefined, username: undefined },
       )
       expect(postToTeams).toHaveBeenCalledWith(
-        'https://outlook.office.com/test',
+        expect.objectContaining({
+          appId: 'test-app-id',
+          webhookUrl: undefined,
+        }),
         'hello',
-        undefined,
+        { conversationId: undefined, username: undefined },
       )
       expect(result.kind).toBe('success')
     })
@@ -166,15 +178,15 @@ describe('relayMessage', () => {
         expect.objectContaining({ username: 'Alice' }),
       )
       expect(postToTeams).toHaveBeenCalledWith(
-        expect.any(String),
+        expect.any(Object),
         'hello',
-        'Alice',
+        expect.objectContaining({ username: 'Alice' }),
       )
     })
   })
 
   describe('session threading', () => {
-    it('saves the thread anchor on the first post of a session', async () => {
+    it('saves anchors for both relays on the first post of a session', async () => {
       vi.mocked(getSessionThread).mockResolvedValueOnce(null)
       await relayMessage({ message: 'first', sessionId: 'aaaaaaaaaaaa' })
       expect(postToSlack).toHaveBeenCalledWith(
@@ -182,14 +194,21 @@ describe('relayMessage', () => {
         'first',
         expect.objectContaining({ threadTs: undefined }),
       )
+      expect(postToTeams).toHaveBeenCalledWith(
+        expect.any(Object),
+        'first',
+        expect.objectContaining({ conversationId: undefined }),
+      )
       expect(saveSessionThread).toHaveBeenCalledWith('aaaaaaaaaaaa', {
         slackThreadTs: '1700000000.000100',
+        teamsThreadId: 'conv-123',
       })
     })
 
-    it('replies into an existing thread without re-saving the anchor', async () => {
+    it('replies into existing threads without re-saving anchors', async () => {
       vi.mocked(getSessionThread).mockResolvedValueOnce({
         slackThreadTs: '1700000000.000100',
+        teamsThreadId: 'conv-123',
       })
       await relayMessage({ message: 'second', sessionId: 'aaaaaaaaaaaa' })
       expect(postToSlack).toHaveBeenCalledWith(
@@ -197,14 +216,29 @@ describe('relayMessage', () => {
         'second',
         expect.objectContaining({ threadTs: '1700000000.000100' }),
       )
+      expect(postToTeams).toHaveBeenCalledWith(
+        expect.any(Object),
+        'second',
+        expect.objectContaining({ conversationId: 'conv-123' }),
+      )
       expect(saveSessionThread).not.toHaveBeenCalled()
     })
 
-    it('does not save a thread when Slack fails on the first post', async () => {
+    it('does not save an anchor when no relay establishes one on the first post', async () => {
       vi.mocked(getSessionThread).mockResolvedValueOnce(null)
       vi.mocked(postToSlack).mockResolvedValueOnce(FAILED_SLACK)
+      vi.mocked(postToTeams).mockResolvedValueOnce(SKIPPED_TEAMS)
       await relayMessage({ message: 'first', sessionId: 'bbbbbbbbbbbb' })
       expect(saveSessionThread).not.toHaveBeenCalled()
+    })
+
+    it('saves only the Teams anchor when Slack fails on the first post', async () => {
+      vi.mocked(getSessionThread).mockResolvedValueOnce(null)
+      vi.mocked(postToSlack).mockResolvedValueOnce(FAILED_SLACK)
+      await relayMessage({ message: 'first', sessionId: 'cccccccccccc' })
+      expect(saveSessionThread).toHaveBeenCalledWith('cccccccccccc', {
+        teamsThreadId: 'conv-123',
+      })
     })
 
     it('does not look up or save threads without a sessionId', async () => {

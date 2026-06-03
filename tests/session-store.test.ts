@@ -19,16 +19,40 @@ describe('session-store (in-memory fallback)', () => {
     expect(await getSessionThread('unknown')).toBeNull()
   })
 
-  it('persists and reads back a thread anchor', async () => {
+  it('persists and reads back a Slack thread anchor', async () => {
     await saveSessionThread('sess-1', { slackThreadTs: '1.1' })
     expect(await getSessionThread('sess-1')).toEqual({ slackThreadTs: '1.1' })
   })
 
+  it('persists and reads back a Teams thread anchor', async () => {
+    await saveSessionThread('sess-1', { teamsThreadId: 'conv-123' })
+    expect(await getSessionThread('sess-1')).toEqual({
+      teamsThreadId: 'conv-123',
+    })
+  })
+
+  it('persists and reads back both thread anchors together', async () => {
+    await saveSessionThread('sess-1', {
+      slackThreadTs: '1.1',
+      teamsThreadId: 'conv-123',
+    })
+    expect(await getSessionThread('sess-1')).toEqual({
+      slackThreadTs: '1.1',
+      teamsThreadId: 'conv-123',
+    })
+  })
+
   it('keeps sessions isolated from one another', async () => {
     await saveSessionThread('sess-1', { slackThreadTs: '1.1' })
-    await saveSessionThread('sess-2', { slackThreadTs: '2.2' })
+    await saveSessionThread('sess-2', {
+      slackThreadTs: '2.2',
+      teamsThreadId: 'conv-456',
+    })
     expect(await getSessionThread('sess-1')).toEqual({ slackThreadTs: '1.1' })
-    expect(await getSessionThread('sess-2')).toEqual({ slackThreadTs: '2.2' })
+    expect(await getSessionThread('sess-2')).toEqual({
+      slackThreadTs: '2.2',
+      teamsThreadId: 'conv-456',
+    })
   })
 
   it('clearSessionStore empties the store', async () => {
@@ -62,7 +86,13 @@ describe('session-store (Upstash failure fallback)', () => {
   })
 
   it('falls back to memory so a write can be read back', async () => {
-    await saveSessionThread('sess-x', { slackThreadTs: '9.9' })
-    expect(await getSessionThread('sess-x')).toEqual({ slackThreadTs: '9.9' })
+    await saveSessionThread('sess-x', {
+      slackThreadTs: '9.9',
+      teamsThreadId: 'conv-99',
+    })
+    expect(await getSessionThread('sess-x')).toEqual({
+      slackThreadTs: '9.9',
+      teamsThreadId: 'conv-99',
+    })
   })
 })

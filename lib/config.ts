@@ -34,6 +34,60 @@ export function isSlackConfigured(): boolean {
   return !!getSlackBotToken() && !!getSlackChannelId()
 }
 
+/** Microsoft Teams Incoming Webhook URL (legacy, no threading). */
 export function getTeamsWebhookUrl(): string | undefined {
   return readOptional('TEAMS_WEBHOOK_URL')
+}
+
+/** Azure AD App ID for the Teams Bot. */
+export function getTeamsBotAppId(): string | undefined {
+  return readOptional('TEAMS_BOT_APP_ID')
+}
+
+/** Client secret for the Teams Bot Azure AD app. */
+export function getTeamsBotAppPassword(): string | undefined {
+  return readOptional('TEAMS_BOT_APP_PASSWORD')
+}
+
+/** Azure AD tenant ID where the Teams Bot app is registered. */
+export function getTeamsBotTenantId(): string | undefined {
+  return readOptional('TEAMS_BOT_TENANT_ID')
+}
+
+/** Teams channel ID to post into (e.g. `19:...@thread.tacv2`). */
+export function getTeamsChannelId(): string | undefined {
+  return readOptional('TEAMS_CHANNEL_ID')
+}
+
+/**
+ * Base URL for the Bot Connector service.
+ * Overridable via `TEAMS_BOT_SERVICE_URL` (used by tests to point at a mock
+ * server); defaults to the Teams-specific Bot Framework endpoint.
+ */
+export function getTeamsBotServiceUrl(): string {
+  const url =
+    readOptional('TEAMS_BOT_SERVICE_URL') ??
+    'https://smba.trafficmanager.net/teams'
+  return url.replace(/\/+$/, '')
+}
+
+/**
+ * Base URL for the Microsoft login endpoint (token acquisition).
+ * Overridable via `TEAMS_BOT_LOGIN_URL` (used by tests to point at a mock
+ * server); defaults to the real Microsoft login endpoint.
+ */
+export function getTeamsBotLoginUrl(): string {
+  const url =
+    readOptional('TEAMS_BOT_LOGIN_URL') ?? 'https://login.microsoftonline.com'
+  return url.replace(/\/+$/, '')
+}
+
+/** True when at least one Teams relay mode is configured (Bot or Webhook). */
+export function isTeamsConfigured(): boolean {
+  const botConfigured =
+    !!getTeamsBotAppId() &&
+    !!getTeamsBotAppPassword() &&
+    !!getTeamsBotTenantId() &&
+    !!getTeamsChannelId()
+  return botConfigured || !!getTeamsWebhookUrl()
 }

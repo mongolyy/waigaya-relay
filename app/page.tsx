@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { getTeamsWebhookUrl, isSlackConfigured } from '@/lib/config'
+import { isSlackConfigured, isTeamsConfigured } from '@/lib/config'
 import AppShell, { USERNAME_COOKIE } from './AppShell'
 
 export const dynamic = 'force-dynamic'
@@ -21,7 +21,7 @@ export default async function Page({ searchParams }: PageProps) {
 
   const configured = {
     slack: isSlackConfigured(),
-    teams: !!getTeamsWebhookUrl(),
+    teams: isTeamsConfigured(),
   }
 
   return (

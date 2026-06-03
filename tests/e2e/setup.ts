@@ -9,16 +9,49 @@ let mockServer: http.Server
 let nextProcess: ChildProcess
 
 export async function setup() {
+  // Tracks the Teams conversation id created on the first post so subsequent
+  // posts can be verified as replies (hitting the /activities endpoint).
+  let teamsConversationId: string | null = null
+
   mockServer = http.createServer((req, res) => {
-    // Slack Web API (chat.postMessage) replies with JSON including `ok` and `ts`.
+    // Slack Web API (chat.postMessage) — returns `ok` and `ts`.
     if (req.url?.startsWith('/slack-api')) {
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ ok: true, ts: '1700000000.000100' }))
       return
     }
-    // Teams Incoming Webhook is happy with any 2xx response.
-    res.writeHead(200, { 'Content-Type': 'text/plain' })
-    res.end('ok')
+
+    // Bot Framework token endpoint.
+    if (req.url?.startsWith('/teams-login')) {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(
+        JSON.stringify({ access_token: 'mock-bot-token', expires_in: 3600 }),
+      )
+      return
+    }
+
+    // Teams Bot Connector — reply to an existing conversation thread.
+    if (
+      req.url?.startsWith('/teams-service/v3/conversations/') &&
+      req.url.includes('/activities')
+    ) {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ id: 'act-reply' }))
+      return
+    }
+
+    // Teams Bot Connector — create a new conversation thread.
+    if (req.url === '/teams-service/v3/conversations') {
+      teamsConversationId = `conv-${Date.now()}`
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(
+        JSON.stringify({ id: teamsConversationId, activityId: 'act-first' }),
+      )
+      return
+    }
+
+    res.writeHead(404)
+    res.end()
   })
   await new Promise<void>((resolve) => mockServer.listen(MOCK_PORT, resolve))
   nextProcess = spawn(
@@ -31,7 +64,12 @@ export async function setup() {
         SLACK_BOT_TOKEN: 'xoxb-test-token',
         SLACK_CHANNEL_ID: 'C0TEST',
         SLACK_API_BASE_URL: `http://localhost:${MOCK_PORT}/slack-api`,
-        TEAMS_WEBHOOK_URL: `http://localhost:${MOCK_PORT}/teams`,
+        TEAMS_BOT_APP_ID: 'test-app-id',
+        TEAMS_BOT_APP_PASSWORD: 'test-password',
+        TEAMS_BOT_TENANT_ID: 'test-tenant',
+        TEAMS_CHANNEL_ID: '19:test@thread.tacv2',
+        TEAMS_BOT_SERVICE_URL: `http://localhost:${MOCK_PORT}/teams-service`,
+        TEAMS_BOT_LOGIN_URL: `http://localhost:${MOCK_PORT}/teams-login`,
       },
       stdio: 'ignore',
     },

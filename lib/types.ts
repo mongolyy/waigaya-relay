@@ -43,6 +43,11 @@ export interface RelayResult {
    * thread anchor for subsequent posts in the same session.
    */
   ts?: string
+  /**
+   * For Teams: the Bot Connector conversation id of the posted message, used
+   * as the thread anchor for subsequent posts in the same session.
+   */
+  conversationId?: string
 }
 
 /** Overall API response. */

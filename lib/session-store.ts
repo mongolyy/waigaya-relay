@@ -13,6 +13,8 @@ import { Redis } from '@upstash/redis'
 export interface SessionThread {
   /** Slack message timestamp (`ts`) of the session's thread-starting post. */
   slackThreadTs?: string
+  /** Teams Bot Connector conversation id of the session's thread-starting post. */
+  teamsThreadId?: string
 }
 
 /** Time-to-live for session records, in seconds (14 days). */
