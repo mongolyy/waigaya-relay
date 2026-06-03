@@ -94,6 +94,11 @@ const CODE_PATTERN = /^[a-z0-9]{12}$/
 
 let fallbackCode: string | null = null
 
+/** Test helper: resets the in-memory fallback code. */
+export function resetFallbackCode(): void {
+  fallbackCode = null
+}
+
 function saveCode(code: string): void {
   try {
     window.sessionStorage.setItem(SESSION_KEY, code)
@@ -158,6 +163,9 @@ export default function MessageComposer({
     () => findExistingCode(initialCode) ?? '',
   )
   const [copyLabel, setCopyLabel] = useState<'copy' | 'copied'>('copy')
+  const [joinMode, setJoinMode] = useState(false)
+  const [joinCode, setJoinCode] = useState('')
+  const [joinCodeError, setJoinCodeError] = useState<string | null>(null)
   const [message, setMessage] = useState('')
   const [formStatus, setFormStatus] = useState<FormStatus>({ kind: 'idle' })
   const [postedMessages, setPostedMessages] = useState<PostedMessage[]>([])
@@ -302,6 +310,25 @@ export default function MessageComposer({
     handleStartNew()
   }
 
+  function handleJoinExisting(e: React.FormEvent) {
+    e.preventDefault()
+    const code = joinCode.trim().toLowerCase()
+    if (!CODE_PATTERN.test(code)) {
+      setJoinCodeError('Enter the 12-character conversation code.')
+      return
+    }
+    saveCode(code)
+    setConversationCode(code)
+    setPostedMessages([])
+    setFormStatus({ kind: 'idle' })
+    localRelayStatus.current.clear()
+    localUserReacted.current.clear()
+    setJoinCode('')
+    setJoinCodeError(null)
+    setJoinMode(false)
+    setPhase('active')
+  }
+
   function handleLeave() {
     try {
       window.sessionStorage.removeItem(SESSION_KEY)
@@ -411,6 +438,72 @@ export default function MessageComposer({
             </span>
             <span className="text-indigo-200 text-sm">新しい会話を始める</span>
           </button>
+
+          {joinMode ? (
+            <form
+              className="flex flex-col gap-3 px-6 py-5 rounded-xl border border-slate-700"
+              onSubmit={handleJoinExisting}
+            >
+              <div>
+                <span className="font-bold text-white text-base">
+                  Join existing conversation
+                </span>
+                <span className="block text-slate-400 text-sm mt-0.5">
+                  既存の会話に参加
+                </span>
+              </div>
+              <input
+                type="text"
+                className="w-full px-3 py-2 rounded-lg border border-slate-700 bg-slate-900 text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="Enter conversation code"
+                value={joinCode}
+                onChange={(e) => {
+                  setJoinCode(e.target.value)
+                  setJoinCodeError(null)
+                }}
+                maxLength={12}
+                spellCheck={false}
+                autoComplete="off"
+                aria-label="Conversation code"
+              />
+              {joinCodeError && (
+                <p className="m-0 text-sm text-red-400" role="alert">
+                  {joinCodeError}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold cursor-pointer hover:bg-indigo-600 transition-colors border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={joinCode.trim().length === 0}
+                >
+                  Join
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg border border-slate-700 bg-transparent text-slate-400 cursor-pointer hover:text-slate-200 hover:border-slate-500 transition-colors"
+                  onClick={() => {
+                    setJoinMode(false)
+                    setJoinCode('')
+                    setJoinCodeError(null)
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <button
+              type="button"
+              className="w-full flex flex-col items-start gap-1 px-6 py-5 rounded-xl border border-slate-700 bg-transparent hover:border-slate-500 hover:bg-slate-800/50 transition-colors cursor-pointer text-left"
+              onClick={() => setJoinMode(true)}
+            >
+              <span className="font-bold text-white text-base">
+                Join existing conversation
+              </span>
+              <span className="text-slate-400 text-sm">既存の会話に参加</span>
+            </button>
+          )}
         </div>
       </main>
     )

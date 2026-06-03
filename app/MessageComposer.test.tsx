@@ -9,7 +9,7 @@ import {
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RelayTarget } from '@/lib/types'
-import MessageComposer from './MessageComposer'
+import MessageComposer, { resetFallbackCode } from './MessageComposer'
 
 const ALL_CONFIGURED: Record<RelayTarget, boolean> = {
   slack: true,
@@ -53,6 +53,7 @@ function installFetchMock(overrides?: { post?: unknown; reactions?: unknown }) {
 
 beforeEach(() => {
   window.sessionStorage.clear()
+  resetFallbackCode()
 })
 
 afterEach(() => {
@@ -82,6 +83,14 @@ describe('MessageComposer — setup phase', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows the join button when no conversation code exists', () => {
+    installFetchMock()
+    renderComposer()
+    expect(
+      screen.getByRole('button', { name: /join existing conversation/i }),
+    ).toBeInTheDocument()
+  })
+
   it('moves to the active phase and shows the message form on start', async () => {
     installFetchMock()
     const user = userEvent.setup()
@@ -100,6 +109,60 @@ describe('MessageComposer — setup phase', () => {
     installFetchMock()
     renderComposer({ initialCode: 'abc123abc123' })
     expect(screen.getByLabelText('Message')).toBeInTheDocument()
+  })
+
+  it('shows a code input form when join button is clicked', async () => {
+    installFetchMock()
+    const user = userEvent.setup()
+    renderComposer()
+    await user.click(
+      screen.getByRole('button', { name: /join existing conversation/i }),
+    )
+    expect(screen.getByLabelText('Conversation code')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^join$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
+  })
+
+  it('joins an existing conversation with a valid 12-char code', async () => {
+    installFetchMock()
+    const user = userEvent.setup()
+    renderComposer()
+    await user.click(
+      screen.getByRole('button', { name: /join existing conversation/i }),
+    )
+    await user.type(screen.getByLabelText('Conversation code'), 'xyz987xyz987')
+    await user.click(screen.getByRole('button', { name: /^join$/i }))
+    expect(await screen.findByLabelText('Message')).toBeInTheDocument()
+    expect(window.sessionStorage.getItem('waigaya-relay:sessionId')).toBe(
+      'xyz987xyz987',
+    )
+  })
+
+  it('shows an error for an invalid code', async () => {
+    installFetchMock()
+    const user = userEvent.setup()
+    renderComposer()
+    await user.click(
+      screen.getByRole('button', { name: /join existing conversation/i }),
+    )
+    await user.type(screen.getByLabelText('Conversation code'), 'bad')
+    await user.click(screen.getByRole('button', { name: /^join$/i }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/12-character/i)
+    // Still in setup phase.
+    expect(screen.queryByLabelText('Message')).not.toBeInTheDocument()
+  })
+
+  it('cancels join mode and returns to setup buttons', async () => {
+    installFetchMock()
+    const user = userEvent.setup()
+    renderComposer()
+    await user.click(
+      screen.getByRole('button', { name: /join existing conversation/i }),
+    )
+    await user.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(
+      screen.getByRole('button', { name: /join existing conversation/i }),
+    ).toBeInTheDocument()
   })
 })
 
