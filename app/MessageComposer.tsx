@@ -464,7 +464,6 @@ export default function MessageComposer({
                 maxLength={12}
                 spellCheck={false}
                 autoComplete="off"
-                autoFocus
                 aria-label="Conversation code"
               />
               {joinCodeError && (

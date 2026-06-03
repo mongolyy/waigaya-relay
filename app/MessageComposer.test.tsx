@@ -120,9 +120,7 @@ describe('MessageComposer — setup phase', () => {
     )
     expect(screen.getByLabelText('Conversation code')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^join$/i })).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: /cancel/i }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
   })
 
   it('joins an existing conversation with a valid 12-char code', async () => {
@@ -132,10 +130,7 @@ describe('MessageComposer — setup phase', () => {
     await user.click(
       screen.getByRole('button', { name: /join existing conversation/i }),
     )
-    await user.type(
-      screen.getByLabelText('Conversation code'),
-      'xyz987xyz987',
-    )
+    await user.type(screen.getByLabelText('Conversation code'), 'xyz987xyz987')
     await user.click(screen.getByRole('button', { name: /^join$/i }))
     expect(await screen.findByLabelText('Message')).toBeInTheDocument()
     expect(window.sessionStorage.getItem('waigaya-relay:sessionId')).toBe(
@@ -152,9 +147,7 @@ describe('MessageComposer — setup phase', () => {
     )
     await user.type(screen.getByLabelText('Conversation code'), 'bad')
     await user.click(screen.getByRole('button', { name: /^join$/i }))
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      /12-character/i,
-    )
+    expect(await screen.findByRole('alert')).toHaveTextContent(/12-character/i)
     // Still in setup phase.
     expect(screen.queryByLabelText('Message')).not.toBeInTheDocument()
   })
